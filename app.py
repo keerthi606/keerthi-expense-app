@@ -33,11 +33,13 @@ with st.form("expense_form"):
   # 2. Date
   date = st.date_input("Date")
 
-  # 3. Transaction Type
-  trans_type = st.radio("Transaction Type", ["INCOME", "EXPENSE"])
+  # 3. Transaction Type (Session state కోసం key వాడటం జరిగింది)
+  trans_type = st.radio(
+      "Transaction Type", ["INCOME", "EXPENSE"], key="trans_type_radio"
+  )
 
   # 4. Category (INCOME మరియు EXPENSE కి వేర్వేరు జాబితాలు)
-  if trans_type == "INCOME":
+  if st.session_state.trans_type_radio == "INCOME":
     categories = [
         "ఓపెనింగ్ బ్యాలెన్స్",
         "జీతం / వేతనం",
@@ -99,7 +101,7 @@ with st.form("expense_form"):
     new_row = {
         "S NO": next_sno,
         "Date": str(date),
-        "Transaction Type": trans_type,
+        "Transaction Type": st.session_state.trans_type_radio,
         "Category": category,
         "Description": description,
         "Amount": amount,
