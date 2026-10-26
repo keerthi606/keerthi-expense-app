@@ -7,7 +7,7 @@ st.set_page_config(
     layout="wide",
 )
 
-# యాప్ మరింత కలర్‌ఫుల్‌గా, స్టైలిష్‌గా కనిపించడానికి కస్టమ్ CSS
+# యాప్ మరింత కలర్‌ఫుల్‌గా, ఎల్లో థీమ్‌తో కనిపించడానికి కస్టమ్ CSS
 st.markdown(
     """
     <style>
@@ -30,13 +30,15 @@ st.markdown(
         color: white;
     }
     h1 {
-        color: #ffffff;
+        color: #1a1a1a;
         text-align: center;
-        background: linear-gradient(90deg, #1f77b4, #2ca02c);
-        padding: 15px;
+        background: linear-gradient(90deg, #ffd700, #ffae00);
+        padding: 20px;
         border-radius: 15px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.15);
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-weight: 800;
+        letter-spacing: 1px;
     }
     h2, h3 {
         color: #2c3e50;
@@ -46,12 +48,12 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.title("🌟 KEERTHI MONTHLY EXPENSE APP 🌟")
+st.title("💛 కీర్తి మంత్లీ ఎక్స్పెన్సెస్ (KEERTHI MONTHLY EXPENSES) 💛")
 st.markdown("---")
 
 DATA_FILE = "expenses_data.csv"
 
-# డేటా లోడ్ చేయడం లేదా కొత్త టేబుల్ క్రియేట్ చేయడం (Errors రాకుండా Handling)
+# డేటా లోడ్ చేయడం లేదా కొత్త టేబుల్ క్రియేట్ చేయడం
 try:
   df = pd.read_csv(DATA_FILE)
   if "Date" in df.columns:
@@ -74,6 +76,18 @@ except FileNotFoundError:
       ]
   )
 
+# --- 1. పైన మొత్తం ఆదాయం, ఖర్చు మరియు మిగులు చూపించడం ---
+if not df.empty:
+  total_income = df[df["Transaction Type"] == "INCOME"]["Amount"].sum()
+  total_expense = df[df["Transaction Type"] == "EXPENSE"]["Amount"].sum()
+  balance = total_income - total_expense
+
+  mcol1, mcol2, mcol3 = st.columns(3)
+  mcol1.metric("💰 మొత్తం ఆదాయం (Income)", f"₹{total_income:,.2f}")
+  mcol2.metric("💸 మొత్తం ఖర్చు (Expense)", f"₹{total_expense:,.2f}")
+  mcol3.metric("⚖️ మిగులు (Balance)", f"₹{balance:,.2f}")
+  st.markdown("---")
+
 st.subheader("📝 కొత్త ట్రాన్సాక్షన్ జోడించండి")
 
 col1, col2 = st.columns(2)
@@ -88,7 +102,7 @@ with col1:
       "Transaction Type", ["INCOME", "EXPENSE"], horizontal=True
   )
 
-  # Category Lists
+  # Category Lists (Category ఆటోమేటిక్‌గా సరిగ్గా మారేలా)
   if trans_type == "INCOME":
     categories = [
         "ఓపెనింగ్ బ్యాలెన్స్",
@@ -124,7 +138,7 @@ with col1:
         "ఇతరాలు",
     ]
 
-  category = st.selectbox("Category", categories)
+  category = st.selectbox("Category", categories, key=f"cat_{trans_type}")
 
 with col2:
   amount = st.number_input("AMOUNT (₹)", min_value=0.0, format="%.2f")
@@ -159,67 +173,118 @@ if st.button("💾 SAVE TRANSACTION"):
   st.success("🎉 విజయవంతంగా సేవ్ చేయబడింది!")
   st.rerun()
 
-# నివేదిక / సమ్మరీ విభాగం
+# --- 2. ఖర్చుల నివేదిక (నెలవారీ ఫిల్టర్‌తో) ---
 st.markdown("---")
 st.subheader("📊 ఖర్చుల నివేదిక (Expenses Summary)")
 
 if not df.empty:
-  st.dataframe(df, use_container_width=True)
+  # నెలల జాబితాను తయారు చేయడం
+  available_months = sorted(df["Month"].unique().tolist(), reverse=True)
+  selected_month_filter = st.selectbox(
+      "నివేదిక కోసం నెలని ఎంచుకోండి (Select Month)", available_months
+  )
 
-  total_income = df[df["Transaction Type"] == "INCOME"]["Amount"].sum()
-  total_expense = df[df["Transaction Type"] == "EXPENSE"]["Amount"].sum()
-  balance = total_income - total_expense
+  # ఎంచుకున్న నెలకు సంబంధించిన డేటాని ఫిల్టర్ చేయడం
+  month_filtered_df = df[df["Month"] == selected_month_filter]
 
-  mcol1, mcol2, mcol3 = st.columns(3)
-  mcol1.metric("💰 మొత్తం ఆదాయం (Income)", f"₹{total_income:,.2f}")
-  mcol2.metric("💸 మొత్తం ఖర్చు (Expense)", f"₹{total_expense:,.2f}")
-  mcol3.metric("⚖️ మిగులు (Balance)", f"₹{balance:,.2f}")
+  st.write(f"### 📅 నెల: **{selected_month_filter}** వివరాలు")
+  st.dataframe(month_filtered_df, use_container_width=True)
 
-  # --- ఐటమ్ వైస్ & మంత్ వైస్ రిపోర్ట్ ---
+  # ఆ నెలకు సంబంధించిన టోటల్స్
+  m_income = month_filtered_df[month_filtered_df["Transaction Type"] == "INCOME"][
+      "Amount"
+  ].sum()
+  m_expense = month_filtered_df[
+      format(month_filtered_df["Transaction Type"] == "EXPENSE")
+      if False
+      else (month_filtered_df["Transaction Type"] == "EXPENSE")
+  ]["Amount"].sum()
+  m_balance = m_income - m_expense
+
+  scol1, scol2, scol3 = st.columns(3)
+  scol1.metric(
+      f"💰 {selected_month_filter} ఆదాయం", f"₹{m_income:,.2f}"
+  )
+  scol2.metric(
+      f"💸 {selected_month_filter} ఖర్చు", f"₹{m_expense:,.2f}"
+  )
+  scol3.metric(
+      f"⚖️ {selected_month_filter} మిగులు", f"₹{m_balance:,.2f}"
+  )
+
+  # --- 3. ఐటమ్ మరియు నెలవారీ విశ్లేషణ (Income & Expense విడివిడిగా) ---
   st.markdown("---")
   st.subheader("📈 ఐటమ్ మరియు నెలవారీ విశ్లేషణ (Item & Month-wise Report)")
 
-  all_categories = df["Category"].unique().tolist()
-  selected_cat = st.selectbox(
-      "ఒక ఐటమ్ / కేటగిరీని ఎంచుకోండి (Select Item to Analyze)", all_categories
+  report_type = st.radio(
+      "విశ్లేషణ రకం ఎంచుకోండి (Select Report Type)",
+      ["EXPENSE (ఖర్చులు)", "INCOME (ఆదాయాలు)"],
+      horizontal=True,
   )
 
-  filtered_df = df[df["Category"] == selected_cat]
+  type_filter = (
+      "EXPENSE" if report_type.startswith("EXPENSE") else "INCOME"
+  )
+  sub_df = df[df["Transaction Type"] == type_filter]
 
-  if not filtered_df.empty:
-    st.write(f"### 👉 **{selected_cat}** యొక్క నెలవారీ వివరాలు:")
-
-    monthly_summary = (
-        filtered_df.groupby("Month")["Amount"].sum().reset_index()
+  if not sub_df.empty:
+    all_categories = sub_df["Category"].unique().tolist()
+    selected_cat = st.selectbox(
+        "ఒక ఐటమ్ / కేటగిరీని ఎంచుకోండి", all_categories, key="report_cat"
     )
-    monthly_summary.columns = ["Month (నెల)", "Total Amount (మొత్తం ఖర్చు ₹)"]
 
-    st.dataframe(monthly_summary, use_container_width=True)
+    cat_filtered_df = sub_df[sub_df["Category"] == selected_cat]
 
-    cat_total = filtered_df["Amount"].sum()
-    st.info(
-        f"📌 **{selected_cat}** మీద ఇప్పటివరకు పెట్టిన మొత్తం ఖర్చు: **₹{cat_total:,.2f}**"
-    )
+    if not cat_filtered_df.empty:
+      st.write(
+          f"### 👉 **{selected_cat}** ({type_filter}) యొక్క నెలవారీ వివరాలు:"
+      )
+
+      monthly_summary = (
+          cat_filtered_df.groupby("Month")["Amount"].sum().reset_index()
+      )
+      monthly_summary.columns = ["Month (నెల)", "Total Amount (₹)"]
+
+      st.dataframe(monthly_summary, use_container_width=True)
+
+      cat_total = cat_filtered_df["Amount"].sum()
+      st.info(
+          f"📌 **{selected_cat}** మీద మొత్తం పెట్టిన {type_filter}:"
+          f" **₹{cat_total:,.2f}**"
+      )
+    else:
+      st.info("ఈ ఐటమ్‌కు సంబంధించిన ఎంట్రీలు ఏవీ లేవు.")
   else:
-    st.info("ఈ ఐటమ్‌కు సంబంధించిన ఎంట్రీలు ఏవీ లేవు.")
+    st.info(f"ఈ విభాగంలో ఎంట్రీలు లేవు.")
 
-  # --- ట్రాన్సాక్షన్ తొలగించే విభాగం ---
+  # --- 4. సురక్షితమైన డిలీట్ ఆప్షన్ (Default గా ఏదీ సెలెక్ట్ అయి ఉండదు) ---
   st.markdown("---")
   st.subheader("❌ తప్పుగా పడిన ఎంట్రీని తొలగించండి (Delete Entry)")
   del_col1, del_col2 = st.columns([2, 1])
   with del_col1:
+    # None ఆప్షన్ డీఫాల్ట్‌గా ఉండేలా చేయడం
+    sno_list = [None] + df["S NO"].tolist()
     sno_to_delete = st.selectbox(
-        "తొలగించవలసిన S NO ని ఎంచుకోండి", df["S NO"].tolist()
+        "తొలగించవలసిన S NO ని ఎంచుకోండి (Select S NO to Delete)",
+        sno_list,
+        format_func=lambda x: "దయచేసి S NO ఎంచుకోండి..."
+        if x is None
+        else f"S NO: {x}",
     )
   with del_col2:
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("🗑️ DELETE ROW"):
-      df = df[df["S NO"] != sno_to_delete]
-      if not df.empty:
-        df["S NO"] = range(1, len(df) + 1)
-      df.to_csv(DATA_FILE, index=False)
-      st.success(f"🗑️ S NO {sno_to_delete} విజయవంతంగా తొలగించబడింది!")
-      st.rerun()
+      if sno_to_delete is not None:
+        df = df[df["S NO"] != sno_to_delete]
+        if not df.empty:
+          df["S NO"] = range(1, len(df) + 1)
+        df.to_csv(DATA_FILE, index=False)
+        st.success(
+            f"🗑️ S NO {sno_to_delete} విజయవంతంగా తొలగించబడింది!"
+        )
+        st.rerun()
+      else:
+        st.warning("⚠️ దయచేసి తొలగించడానికి ఒక S NO ని ఎంచుకోండి!")
 else:
   st.info(
       "ℹ️ ఇంతవరకు ఎటువంటి ఎంట్రీలు లేవు. కొత్త ట్రాన్సాక్షన్ జోడించి ప్రారంభించండి!"
