@@ -51,12 +51,15 @@ st.markdown("---")
 
 DATA_FILE = "expenses_data.csv"
 
-# డేటా లోడ్ చేయడం లేదా కొత్త టేబుల్ క్రియేట్ చేయడం
+# డేటా లోడ్ చేయడం లేదా కొత్త టేబుల్ క్రియేట్ చేయడం (Errors రాకుండా Handling)
 try:
   df = pd.read_csv(DATA_FILE)
   if "Date" in df.columns:
-    df["Date"] = pd.to_datetime(df["Date"])
-    df["Month"] = df["Date"].dt.strftime("%Y-%m")
+    df["Date"] = pd.to_datetime(df["Date"], errors="coerce").dt.strftime(
+        "%Y-%m-%d"
+    )
+  if "Month" not in df.columns and "Date" in df.columns:
+    df["Month"] = pd.to_datetime(df["Date"]).dt.strftime("%Y-%m")
 except FileNotFoundError:
   df = pd.DataFrame(
       columns=[
@@ -161,12 +164,7 @@ st.markdown("---")
 st.subheader("📊 ఖర్చుల నివేదిక (Expenses Summary)")
 
 if not df.empty:
-  # డేటా ఫ్రేమ్ లో తేదీని సరిగ్గా చూపడానికి
-  display_df = df.copy()
-  if "Month" in display_df.columns:
-    display_df["Date"] = pd.to_datetime(display_df["Date"]).dt.date
-
-  st.dataframe(display_df, use_container_width=True)
+  st.dataframe(df, use_container_width=True)
 
   total_income = df[df["Transaction Type"] == "INCOME"]["Amount"].sum()
   total_expense = df[df["Transaction Type"] == "EXPENSE"]["Amount"].sum()
@@ -177,7 +175,7 @@ if not df.empty:
   mcol2.metric("💸 మొత్తం ఖర్చు (Expense)", f"₹{total_expense:,.2f}")
   mcol3.metric("⚖️ మిగులు (Balance)", f"₹{balance:,.2f}")
 
-  # --- ఐటమ్ వైస్ & మంత్ వైస్ రిపోర్ట్ (Item-wise & Month-wise Analysis) ---
+  # --- ఐటమ్ వైస్ & మంత్ వైస్ రిపోర్ట్ ---
   st.markdown("---")
   st.subheader("📈 ఐటమ్ మరియు నెలవారీ విశ్లేషణ (Item & Month-wise Report)")
 
@@ -186,13 +184,11 @@ if not df.empty:
       "ఒక ఐటమ్ / కేటగిరీని ఎంచుకోండి (Select Item to Analyze)", all_categories
   )
 
-  # ఫిల్టర్ చేసిన డేటా
   filtered_df = df[df["Category"] == selected_cat]
 
   if not filtered_df.empty:
     st.write(f"### 👉 **{selected_cat}** యొక్క నెలవారీ వివరాలు:")
 
-    # నెల వారీగా గ్రూప్ చేసి టోటల్ అమౌంట్ కట్టడం
     monthly_summary = (
         filtered_df.groupby("Month")["Amount"].sum().reset_index()
     )
@@ -207,7 +203,7 @@ if not df.empty:
   else:
     st.info("ఈ ఐటమ్‌కు సంబంధించిన ఎంట్రీలు ఏవీ లేవు.")
 
-  # --- ట్రాన్సాక్షన్ తొలగించే విభాగం (Delete Transaction) ---
+  # --- ట్రాన్సాక్షన్ తొలగించే విభాగం ---
   st.markdown("---")
   st.subheader("❌ తప్పుగా పడిన ఎంట్రీని తొలగించండి (Delete Entry)")
   del_col1, del_col2 = st.columns([2, 1])
