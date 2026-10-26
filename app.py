@@ -38,5 +38,3 @@ else:
   ]
 
 category = st.selectbox("Category", categories)
-       
-       
