@@ -114,11 +114,10 @@ with col1:
 with col2:
   amount = st.number_input("AMOUNT (₹)", min_value=0.0, format="%.2f")
 
-  # Payment Mode (Horizontal buttons)
-  payment_mode = st.radio(
+  # Payment Mode (Dropdown లాగా st.selectbox ఉపయోగించాం)
+  payment_mode = st.selectbox(
       "Payment Mode",
       ["GOOGLE PAY", "PHONE PE", "CASH", "CREDIT CARD", "OTHERS", "BANK ACCOUNT"],
-      horizontal=True,
   )
 
   # "OTHERS" select chesinappudu matrame description box kanipistundi
@@ -142,12 +141,12 @@ if st.button("💾 SAVE TRANSACTION"):
   }
   df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
   df.to_csv(DATA_FILE, index=False)
-  st.success("🎉 Vijayavanthanga save cheyabadindi!")
+  st.success("🎉 విజయవంతంగా సేవ్ చేయబడింది!")
   st.rerun()
 
 # Summary Vibhagam
 st.markdown("---")
-st.subheader("📊 Kharchula Nivedika (Expenses Summary)")
+st.subheader("📊 ఖర్చుల నివేదిక (Expenses Summary)")
 
 if not df.empty:
   st.dataframe(df, use_container_width=True)
@@ -157,11 +156,11 @@ if not df.empty:
   balance = total_income - total_expense
 
   mcol1, mcol2, mcol3 = st.columns(3)
-  mcol1.metric("💰 Mottam Adayam (Income)", f"₹{total_income:,.2f}")
-  mcol2.metric("💸 Mottam Kharchu (Expense)", f"₹{total_expense:,.2f}")
-  mcol3.metric("⚖️ Migulu (Balance)", f"₹{balance:,.2f}")
+  mcol1.metric("💰 మొత్తం ఆదాయం (Income)", f"₹{total_income:,.2f}")
+  mcol2.metric("💸 మొత్తం ఖర్చు (Expense)", f"₹{total_expense:,.2f}")
+  mcol3.metric("⚖️ మిగులు (Balance)", f"₹{balance:,.2f}")
 else:
   st.info(
-      "ℹ️ Inthavaraku entrulem levu. Kotha transaction add చేసి start"
-      " cheyandi!"
+      "ℹ️ ఇంతవరకు ఎటువంటి ఎంట్రీలు లేవు. కొత్త ట్రాన్సాక్షన్ జోడించి ప్రారంభించండి!"
   )
+      
