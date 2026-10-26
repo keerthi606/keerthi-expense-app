@@ -7,7 +7,7 @@ st.set_page_config(
     layout="wide",
 )
 
-# App chala colourful ga undadaniki custom CSS styling
+# App colourful ga, stylish ga undadaniki custom CSS
 st.markdown(
     """
     <style>
@@ -31,12 +31,6 @@ st.markdown(
         color: #1f77b4;
         text-align: center;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    .metric-card {
-        background-color: #ffffff;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     </style>
 """,
@@ -66,17 +60,19 @@ except FileNotFoundError:
 
 st.subheader("📝 Kotha Transaction Jodinchandi")
 
-# Two columns ga form layout set chedham
 col1, col2 = st.columns(2)
 
 with col1:
   next_sno = len(df) + 1
   st.number_input("S NO *", value=next_sno, disabled=True)
   date = st.date_input("Date")
+
+  # Transaction Type
   trans_type = st.radio(
       "Transaction Type", ["INCOME", "EXPENSE"], horizontal=True
   )
 
+  # Category Lists
   if trans_type == "INCOME":
     categories = [
         "ఓపెనింగ్ బ్యాలెన్స్",
@@ -112,27 +108,26 @@ with col1:
         "ఇతరాలు",
     ]
 
+  # Category selection (Dropdown)
   category = st.selectbox("Category", categories)
 
 with col2:
   amount = st.number_input("AMOUNT (₹)", min_value=0.0, format="%.2f")
 
-  # Payment mode select chesinappudu options
+  # Payment Mode (Horizontal buttons)
   payment_mode = st.radio(
       "Payment Mode",
       ["GOOGLE PAY", "PHONE PE", "CASH", "CREDIT CARD", "OTHERS", "BANK ACCOUNT"],
       horizontal=True,
   )
 
-  # "OTHERS" select chesinappudu matrame description kanipistundi
+  # "OTHERS" select chesinappudu matrame description box kanipistundi
   if payment_mode == "OTHERS":
     description = st.text_area(
         "Other Payment Description (దయచేసి వివరించండి)"
     )
   else:
-    description = (
-        f"Paid via {payment_mode}"  # Default ga payment mode save avutundi
-    )
+    description = f"Paid via {payment_mode}"
 
 st.markdown("")
 if st.button("💾 SAVE TRANSACTION"):
@@ -150,7 +145,7 @@ if st.button("💾 SAVE TRANSACTION"):
   st.success("🎉 Vijayavanthanga save cheyabadindi!")
   st.rerun()
 
-# Nivedika / Summary Vibhagam
+# Summary Vibhagam
 st.markdown("---")
 st.subheader("📊 Kharchula Nivedika (Expenses Summary)")
 
@@ -167,6 +162,6 @@ if not df.empty:
   mcol3.metric("⚖️ Migulu (Balance)", f"₹{balance:,.2f}")
 else:
   st.info(
-      "ℹ️ Inthavaraku entrulem levu. Kotha transaction add chesi start"
+      "ℹ️ Inthavaraku entrulem levu. Kotha transaction add చేసి start"
       " cheyandi!"
   )
