@@ -23,94 +23,83 @@ except FileNotFoundError:
       ]
   )
 
-with st.form("expense_form"):
-  st.subheader("కొత్త ట్రాన్సాక్షన్ జోడించండి")
+st.subheader("కొత్త ట్రాన్సాక్షన్ జోడించండి")
 
-  # 1. S NO (ఆటో క్యాలిక్యులేటెడ్)
-  next_sno = len(df) + 1
-  st.number_input("S NO *", value=next_sno, disabled=True)
+# 1. S NO (ఆటో క్యాలిక్యులేటెడ్)
+next_sno = len(df) + 1
+st.number_input("S NO *", value=next_sno, disabled=True)
 
-  # 2. Date
-  date = st.date_input("Date")
+# 2. Date
+date = st.date_input("Date")
 
-  # 3. Transaction Type (Session state కోసం key వాడటం జరిగింది)
-  trans_type = st.radio(
-      "Transaction Type", ["INCOME", "EXPENSE"], key="trans_type_radio"
-  )
+# 3. Transaction Type (rerun కోసం explicit గా st.rerun వాడదాం)
+trans_type = st.radio("Transaction Type", ["INCOME", "EXPENSE"])
 
-  # 4. Category (INCOME మరియు EXPENSE కి వేర్వేరు జాబితాలు)
-  if st.session_state.trans_type_radio == "INCOME":
-    categories = [
-        "ఓపెనింగ్ బ్యాలెన్స్",
-        "జీతం / వేతనం",
-        "క్రెడిట్ కార్డ్",
-        "లోన్",
-        "అప్పు",
-    ]
-  else:
-    categories = [
-        "సరుకులు",
-        "కూరగాయలు / పండ్లు",
-        "పాలు",
-        "పెరుగు",
-        "పెట్రోలు",
-        "క్రెడిట్ కార్డ్ పేమెంట్",
-        "వెహికల్ మెయింటెనెన్స్",
-        "అప్పు",
-        "డ్వాక్రా లోను",
-        "కరెంట్ బిల్లు",
-        "పేపర్ బిల్లు",
-        "టిఫిన్స్ / హోటల్",
-        "మూవీస్",
-        "క్లోత్స్",
-        "టాయిస్",
-        "మందులు / మెడికల్",
-        "మొబైల్ రీఛార్జ్ / డిష్ / ఇంటర్నెట్",
-        "స్కూల్ / కాలేజ్ ఫీజులు",
-        "ఇంటి అద్దె (House Rent)",
-        "సిలిండర్ / గ్యాస్ బిల్లు",
-        "వాటర్ బిల్లు / క్యాన్లు",
-        "పూజ సామాగ్రి",
-        "ఇతరాలు",
-    ]
+# 4. Category (INCOME మరియు EXPENSE కి వేర్వేరు జాబితాలు)
+if trans_type == "INCOME":
+  categories = [
+      "ఓపెనింగ్ బ్యాలెన్స్",
+      "జీతం / వేతనం",
+      "క్రెడిట్ కార్డ్",
+      "లోన్",
+      "అప్పు",
+  ]
+else:
+  categories = [
+      "సరుకులు",
+      "కూరగాయలు / పండ్లు",
+      "పాలు",
+      "పెరుగు",
+      "పెట్రోలు",
+      "క్రెడిట్ కార్డ్ పేమెంట్",
+      "వెహికల్ మెయింటెనెన్స్",
+      "అప్పు",
+      "డ్వాక్రా లోను",
+      "కరెంట్ బిల్లు",
+      "పేపర్ బిల్లు",
+      "టిఫిన్స్ / హోటల్",
+      "మూవీస్",
+      "క్లోత్స్",
+      "టాయిస్",
+      "మందులు / మెడికల్",
+      "మొబైల్ రీఛార్జ్ / డిష్ / ఇంటర్నెట్",
+      "స్కూల్ / కాలేజ్ ఫీజులు",
+      "ఇంటి అద్దె (House Rent)",
+      "సిలిండర్ / గ్యాస్ బిల్లు",
+      "వాటర్ బిల్లు / క్యాన్లు",
+      "పూజ సామాగ్రి",
+      "ఇతరాలు",
+  ]
 
-  category = st.selectbox("Category", categories)
+category = st.selectbox("Category", categories)
 
-  # 5. Description
-  description = st.text_area("Description")
+# 5. Description
+description = st.text_area("Description")
 
-  # 6. Amount
-  amount = st.number_input("AMOUNT", min_value=0.0, format="%.2f")
+# 6. Amount
+amount = st.number_input("AMOUNT", min_value=0.0, format="%.2f")
 
-  # 7. Payment Mode
-  payment_mode = st.radio(
-      "Payment Mode",
-      [
-          "GOOGLE PAY",
-          "PHONE PE",
-          "CASH",
-          "CREDIT CARD",
-          "OTHERS",
-          "BANK ACCOUNT",
-      ],
-  )
+# 7. Payment Mode
+payment_mode = st.radio(
+    "Payment Mode",
+    ["GOOGLE PAY", "PHONE PE", "CASH", "CREDIT CARD", "OTHERS", "BANK ACCOUNT"],
+)
 
-  submitted = st.form_submit_button("Save")
-
-  if submitted:
-    new_row = {
-        "S NO": next_sno,
-        "Date": str(date),
-        "Transaction Type": st.session_state.trans_type_radio,
-        "Category": category,
-        "Description": description,
-        "Amount": amount,
-        "Payment Mode": payment_mode,
-    }
-    df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-    df.to_csv(DATA_FILE, index=False)
-    st.success("విజయవంతంగా సేవ్ చేయబడింది!")
-    st.rerun()
+# Save బటన్
+if st.button("Save"):
+  new_row = {
+      "S NO": next_sno,
+      "Date": str(date),
+      "Transaction Type": trans_type,
+      "Category": category,
+      "Description": description,
+      "Amount": amount,
+      "Payment Mode": payment_mode,
+  }
+  df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+  df.to_csv(DATA_FILE, index=False)
+  st.success("విజయవంతంగా సేవ్ చేయబడింది!")
+  st.rerun()
 
 # నివేదిక / సమ్మరీ విభాగం
 st.divider()
