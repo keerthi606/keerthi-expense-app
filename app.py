@@ -69,15 +69,15 @@ st.markdown(
 
 DATA_FILE = "expenses_data.csv"
 
-# డేటా లోడ్ చేయడం మరియు అన్ని తేదీలను ఒకే ఫార్మాట్‌లోకి మార్చడం
+# డేటా లోడ్ చేయడం మరియు తేదీలు, నెలలను సరిగ్గా సెట్ చేయడం
 try:
     df = pd.read_csv(DATA_FILE)
     if not df.empty and "Date" in df.columns:
-        # అన్ని తేదీలను 'DD-MM-YYYY' రూపంలోకి మార్చడం
         df["Date"] = pd.to_datetime(df["Date"], errors="coerce").dt.strftime(
             "%d-%m-%Y"
         )
-    if not df.empty and "Month" not in df.columns and "Date" in df.columns:
+    if not df.empty and "Month" in df.columns:
+        # Month column proper format lo undela chudatam
         df["Month"] = pd.to_datetime(
             df["Date"], format="%d-%m-%Y", errors="coerce"
         ).dt.strftime("%B %Y")
@@ -217,7 +217,9 @@ if st.button("💾 SAVE TRANSACTION"):
         st.error(error_message)
     else:
         formatted_date = date.strftime("%d-%m-%Y")
-        formatted_month = date.strftime("%B %Y")
+        formatted_month = date.strftime(
+            "%B %Y"
+        )  # ఉదాహరణకు: October 2026
 
         new_row = {
             "S NO": next_sno,
@@ -231,16 +233,19 @@ if st.button("💾 SAVE TRANSACTION"):
         }
         df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
         df.to_csv(DATA_FILE, index=False)
-        
-        # Save Successfully message స్పష్టంగా చూపించడం కోసం
-        st.success("✅ Save Successfully! ట్రాన్సాక్షన్ విజయవంతంగా సేవ్ చేయబడింది.")
+
+        # స్పష్టంగా సక్సెస్ మెసేజ్ చూపించడం
+        st.success(
+            "✅ Save Successfully! ట్రాన్సాక్షన్ విజయవంతంగా సేవ్ చేయబడింది."
+        )
+        st.balloons()
         st.rerun()
 
 st.markdown("---")
 st.subheader("📊 ఖర్చుల నివేదిక (Expenses Summary)")
 
 if not df.empty:
-    available_months = sorted(df["Month"].unique().tolist())
+    available_months = sorted(df["Month"].unique().tolist(), reverse=True)
     selected_month_filter = st.selectbox(
         "నివేదిక కోసం నెలని ఎంచుకోండి (Select Month)", available_months
     )
