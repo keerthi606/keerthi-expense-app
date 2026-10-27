@@ -72,7 +72,6 @@ DATA_FILE = "expenses_data.csv"
 try:
     df = pd.read_csv(DATA_FILE)
     if "Date" in df.columns:
-        # తేదీని సరైన ఫార్మాట్‌లోకి మార్చడం (DD-MM-YYYY)
         df["Date"] = pd.to_datetime(df["Date"], errors="coerce").dt.strftime(
             "%d-%m-%Y"
         )
@@ -120,6 +119,9 @@ with col1:
     )
 
     date = st.date_input("Date *")
+    # యూజర్ కి స్పష్టంగా డేట్ ఫార్మాట్ కనిపించడానికి చిన్న టెక్స్ట్
+    formatted_date_preview = date.strftime("%d-%m-%Y")
+    st.caption(f"📅 ఎంచుకున్న తేదీ రూపం: **{formatted_date_preview}**")
 
     trans_type = st.radio(
         "Transaction Type *", ["INCOME", "EXPENSE"], horizontal=True
@@ -213,9 +215,8 @@ if st.button("💾 SAVE TRANSACTION"):
     if not validation_passed:
         st.error(error_message)
     else:
-        # తేదీని 'DD-MM-YYYY' మరియు నెలని 'Month YYYY' రూపంలో సేవ్ చేయడం
         formatted_date = date.strftime("%d-%m-%Y")
-        formatted_month = date.strftime("%B %Y")  # ఉదాహరణ: August 2026
+        formatted_month = date.strftime("%B %Y")
 
         new_row = {
             "S NO": next_sno,
