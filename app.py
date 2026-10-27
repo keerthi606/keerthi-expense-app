@@ -69,13 +69,15 @@ st.markdown(
 
 DATA_FILE = "expenses_data.csv"
 
+# డేటా లోడ్ చేయడం మరియు అన్ని తేదీలను ఒకే ఫార్మాట్‌లోకి మార్చడం
 try:
     df = pd.read_csv(DATA_FILE)
-    if "Date" in df.columns:
+    if not df.empty and "Date" in df.columns:
+        # అన్ని తేదీలను 'DD-MM-YYYY' రూపంలోకి మార్చడం
         df["Date"] = pd.to_datetime(df["Date"], errors="coerce").dt.strftime(
             "%d-%m-%Y"
         )
-    if "Month" not in df.columns and "Date" in df.columns:
+    if not df.empty and "Month" not in df.columns and "Date" in df.columns:
         df["Month"] = pd.to_datetime(
             df["Date"], format="%d-%m-%Y", errors="coerce"
         ).dt.strftime("%B %Y")
@@ -119,7 +121,6 @@ with col1:
     )
 
     date = st.date_input("Date *")
-    # యూజర్ కి స్పష్టంగా డేట్ ఫార్మాట్ కనిపించడానికి చిన్న టెక్స్ట్
     formatted_date_preview = date.strftime("%d-%m-%Y")
     st.caption(f"📅 ఎంచుకున్న తేదీ రూపం: **{formatted_date_preview}**")
 
@@ -230,7 +231,9 @@ if st.button("💾 SAVE TRANSACTION"):
         }
         df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
         df.to_csv(DATA_FILE, index=False)
-        st.success("🎉 ట్రాన్సాక్షన్ విజయవంతంగా సేవ్ చేయబడింది!")
+        
+        # Save Successfully message స్పష్టంగా చూపించడం కోసం
+        st.success("✅ Save Successfully! ట్రాన్సాక్షన్ విజయవంతంగా సేవ్ చేయబడింది.")
         st.rerun()
 
 st.markdown("---")
@@ -301,7 +304,7 @@ if not df.empty:
                 if not df.empty:
                     df["S NO"] = range(1, len(df) + 1)
                 df.to_csv(DATA_FILE, index=False)
-                st.success(f"🗑️ S NO {sno_to_delete} విజయవంతంగా తొలగించబడింది!")
+                st.success("🗑️ ఎంట్రీ విజయవంతంగా తొలగించబడింది!")
                 st.rerun()
             else:
                 st.warning("⚠️ దయచేసి తొలగించడానికి ఒక S NO ని ఎంచుకోండి!")
