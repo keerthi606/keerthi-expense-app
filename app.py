@@ -10,7 +10,7 @@ st.set_page_config(
     layout="wide",
 )
 
-# మరింత కలర్‌ఫుల్ & స్టైలిష్ మోడర్న్ UI స్టైలింగ్ (Colorful Gradients & Mobile Optimization)
+# UI Styling
 st.markdown(
     """
     <style>
@@ -58,7 +58,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# కలర్‌ఫుల్ టైటిల్ హెడర్
 st.markdown(
     """
     <div class="title-container">
@@ -70,7 +69,6 @@ st.markdown(
 
 DATA_FILE = "expenses_data.csv"
 
-# డేటా లోడ్ చేయడం లేదా కొత్త టేబుల్ క్రియేట్ చేయడం
 try:
     df = pd.read_csv(DATA_FILE)
     if "Date" in df.columns:
@@ -93,7 +91,6 @@ except FileNotFoundError:
         ]
     )
 
-# --- 1. పైభాగంలో కలర్‌ఫుల్ టోటల్స్ కార్డ్స్ ---
 if not df.empty:
     total_income = df[df["Transaction Type"] == "INCOME"]["Amount"].sum()
     total_expense = df[df["Transaction Type"] == "EXPENSE"]["Amount"].sum()
@@ -110,7 +107,6 @@ st.subheader("📝 కొత్త ట్రాన్సాక్షన్ జ�
 col1, col2 = st.columns(2)
 
 with col1:
-    # ఆటోమేటిక్ సీరియల్ నంబర్ (Auto S.No Generation)
     next_sno = (
         int(df["S NO"].max()) + 1
         if (not df.empty and "S NO" in df.columns and not df["S NO"].isnull().all())
@@ -182,7 +178,6 @@ with col2:
     ]
     payment_mode = st.selectbox("Payment Mode *", payment_modes)
 
-    # తప్పనిసరి డిస్క్రిప్షన్ కాలమ్ (Description Field)
     description = st.text_input(
         "Description (ఎవరికి/దేనికి చెల్లించారు?) *",
         placeholder="ఉదాహరణ: రామయ్య గారికి కిరాణా సామాన్లకు",
@@ -190,7 +185,6 @@ with col2:
 
 st.markdown("")
 
-# --- 2. తప్పనిసరి ఫీల్డ్స్ వాలిడేషన్ (Mandatory Fields Validation) ---
 if st.button("💾 SAVE TRANSACTION"):
     validation_passed = True
     error_message = ""
@@ -232,7 +226,6 @@ if st.button("💾 SAVE TRANSACTION"):
         st.success("🎉 ట్రాన్సాక్షన్ విజయవంతంగా సేవ్ చేయబడింది!")
         st.rerun()
 
-# --- 3. నెలవారీ ఖర్చుల నివేదిక & ఎక్సెల్ డౌన్‌లోడ్ ఆప్షన్ ---
 st.markdown("---")
 st.subheader("📊 ఖర్చుల నివేదిక (Expenses Summary)")
 
@@ -247,10 +240,9 @@ if not df.empty:
     st.write(f"📅 నెల: **{selected_month_filter}** వివరాలు")
     st.dataframe(month_filtered_df, use_container_width=True)
 
-    # --- Excel / CSV Download ఆప్షన్ ---
-    # ఎక్సెల్ ఫార్మాట్‌లో డౌన్‌లోడ్ కావడానికి BytesIO ఉపయోగించి xlsxwriter వాడకం
+    # Excel Download using openpyxl engine
     excel_buffer = BytesIO()
-    with pd.ExcelWriter(excel_buffer, engine="xlsxwriter") as writer:
+    with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
         month_filtered_df.to_excel(
             writer, sheet_name=f"Expenses_{selected_month_filter}", index=False
         )
@@ -282,63 +274,6 @@ if not df.empty:
     scol2.metric(f"💸 {selected_month_filter} ఖర్చు", f"₹ {m_expense:,.2f}")
     scol3.metric(f"⚖️ {selected_month_filter} మిగులు", f"₹ {m_balance:,.2f}")
 
-    # --- 4. ఐటమ్ మరియు నెలవారీ విశ్లేషణ ---
-    st.markdown("---")
-    st.subheader("📈 ఐటమ్ మరియు నెలవారీ విశ్లేషణ (Item & Month-wise Report)")
-
-    report_type = st.radio(
-        "విశ్లేషణ రకం ఎంచుకోండి", ["EXPENSE", "INCOME"], horizontal=True, key="rep_type"
-    )
-
-    sub_df = df[df["Transaction Type"] == report_type]
-
-    if not sub_df.empty:
-        all_categories = sub_df["Category"].unique().tolist()
-        selected_cat = st.selectbox(
-            "ఒక ఐటమ్ / కేటగిరీని ఎంచుకోండి", all_categories, key="report_cat"
-        )
-
-        cat_filtered_df = sub_df[sub_df["Category"] == selected_cat]
-
-        if not cat_filtered_df.empty:
-            st.write(
-                f"### 👉 **{selected_cat}** ({report_type}) యొక్క నెలవారీ వివరాలు:"
-            )
-
-            monthly_summary = (
-                cat_filtered_df.groupby("Month")["Amount"].sum().reset_index()
-            )
-            monthly_summary.columns = ["Month (నెల)", "Total Amount (₹)"]
-
-            st.dataframe(monthly_summary, use_container_width=True)
-
-            cat_total = cat_filtered_df["Amount"].sum()
-            st.info(
-                f"📌 **{selected_cat}** మీద మొత్తం పెట్టిన {report_type}:"
-                f" **₹ {cat_total:,.2f}**"
-            )
-        else:
-            st.info("ఈ ఐటమ్‌కు సంబంధించిన ఎంట్రీలు ఏవీ లేవు.")
-    else:
-        st.info("ఈ విభాగంలో ఎంట్రీలు లేవు.")
-
-    # --- 5. Payment Mode Wise Report ---
-    st.markdown("---")
-    st.subheader("💳 పేమెంట్ మోడ్ వారీగా విశ్లేషణ (Payment Mode Report)")
-
-    pay_modes = df["Payment Mode"].unique().tolist()
-    selected_mode = st.selectbox("ఒక పేమెంట్ మోడ్‌ని ఎంచుకోండి", pay_modes)
-
-    mode_filtered_df = df[df["Payment Mode"] == selected_mode]
-    if not mode_filtered_df.empty:
-        st.dataframe(mode_filtered_df, use_container_width=True)
-        mode_total = mode_filtered_df["Amount"].sum()
-        st.info(
-            f"📌 **{selected_mode}** ద్వారా జరిగిన మొత్తం ట్రాన్సాక్షన్స్ విలువ:"
-            f" **₹ {mode_total:,.2f}**"
-        )
-
-    # --- 6. సురక్షితమైన డిలీట్ ఆప్షన్ ---
     st.markdown("---")
     st.subheader("❌ తప్పుగా పడిన ఎంట్రీని తొలగించండి (Delete Entry)")
     del_col1, del_col2 = st.columns([2, 1])
