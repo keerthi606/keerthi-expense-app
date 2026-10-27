@@ -10,7 +10,7 @@ st.set_page_config(
     layout="wide",
 )
 
-# UI Styling
+# Custom UI Styling
 st.markdown(
     """
     <style>
@@ -31,6 +31,15 @@ st.markdown(
     .stButton>button:hover {
         background: linear-gradient(90deg, #e0355d 0%, #e03f22 100%);
         color: white;
+    }
+    .welcome-text {
+        text-align: center;
+        color: #4A154B;
+        font-size: 32px;
+        font-weight: 800;
+        margin-top: 10px;
+        margin-bottom: 15px;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
     }
     .title-container {
         background: linear-gradient(90deg, #654ea3 0%, #eaafc8 100%);
@@ -55,20 +64,23 @@ st.markdown(
     }
     .footer-text {
         text-align: center;
-        color: #555555;
-        font-size: 16px;
-        font-weight: 600;
-        margin-top: 40px;
-        padding: 15px;
-        border-top: 2px dashed #ccc;
+        color: #4A154B;
+        font-size: 30px;
+        font-weight: 800;
+        margin-top: 50px;
+        padding: 20px;
+        border-top: 3px dashed #654ea3;
     }
     </style>
 """,
     unsafe_allow_html=True,
 )
 
-# మొదటిలో స్వాగతం
-st.markdown("### 🙏 **స్వాగతం (Swagatham)** 🙏")
+# 1. పెద్ద సైజు స్వాగతం హెడ్డింగ్
+st.markdown(
+    '<div class="welcome-text">🙏 స్వాగతం (Swagatham) 🙏</div>',
+    unsafe_allow_html=True,
+)
 
 st.markdown(
     """
@@ -81,7 +93,7 @@ st.markdown(
 
 DATA_FILE = "expenses_data.csv"
 
-# డేటా లోడ్ చేయడం మరియు మిక్స్డ్ డేట్ ఫార్మాట్‌లను సరిగ్గా పార్స్ చేయడం
+# డేటా లోడ్ చేయడం మరియు తేదీలు/నెలలను సరిగ్గా సెట్ చేయడం
 try:
     df = pd.read_csv(DATA_FILE)
     if not df.empty and "Date" in df.columns:
@@ -90,7 +102,6 @@ try:
         )
         df["Date"] = parsed_dates.dt.strftime("%d-%m-%Y")
         df["Month"] = parsed_dates.dt.strftime("%B %Y")
-        # ఏవైనా అనవసరమైన తప్పు రోస్ ఉంటే తొలగించడానికి
         df = df.dropna(subset=["Date"])
 except FileNotFoundError:
     df = pd.DataFrame(
@@ -105,6 +116,12 @@ except FileNotFoundError:
             "Payment Mode",
         ]
     )
+
+# 2. సేవ్ సక్సెస్ మెసేజ్ చూపించడం (మళ్లీ లోడ్ అయినా కనిపించేలా)
+if "show_success" in st.session_state and st.session_state["show_success"]:
+    st.success("✅ Save Successfully! ట్రాన్సాక్షన్ విజయవంతంగా సేవ్ చేయబడింది.")
+    st.toast("🎉 ట్రాన్సాక్షన్ సేవ్ అయింది!")
+    st.session_state["show_success"] = False
 
 if not df.empty:
     total_income = df[df["Transaction Type"] == "INCOME"]["Amount"].sum()
@@ -220,8 +237,7 @@ if st.button("💾 SAVE TRANSACTION"):
     elif not description.strip():
         validation_passed = False
         error_message = (
-            "⚠️ డిస్క్రిప్షన్ రాయడం మర్చిపోయారు! దయచేసి ఎవరికి/దేనికి"
-            " ఇచ్చారో రాయండి."
+            "⚠️ డిస్క్రిప్షన్ రాయడం మర్చిపోయారు! దయచేసి వివరాలు నింపండి."
         )
 
     if not validation_passed:
@@ -243,9 +259,7 @@ if st.button("💾 SAVE TRANSACTION"):
         df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
         df.to_csv(DATA_FILE, index=False)
 
-        st.success(
-            "✅ Save Successfully! ట్రాన్సాక్షన్ విజయవంతంగా సేవ్ చేయబడింది."
-        )
+        st.session_state["show_success"] = True
         st.balloons()
         st.rerun()
 
@@ -297,6 +311,71 @@ if not df.empty:
     scol2.metric(f"💸 {selected_month_filter} ఖర్చు", f"₹ {m_expense:,.2f}")
     scol3.metric(f"⚖️ {selected_month_filter} మిగులు", f"₹ {m_balance:,.2f}")
 
+    # 3. ఐటమ్ / కేటగిరీ వారీగా నెలవారీ విశ్లేషణ విభాగం
+    st.markdown("---")
+    st.subheader("📈 ఐటమ్ / కేటగిరీ వారీగా నెలవారీ విశ్లేషణ")
+
+    rep_col1, rep_col2 = st.columns(2)
+    with rep_col1:
+        report_type = st.radio(
+            "రకం ఎంచుకోండి (Transaction Type)",
+            ["EXPENSE", "INCOME"],
+            horizontal=True,
+            key="item_rep_type",
+        )
+
+    sub_df = df[df["Transaction Type"] == report_type]
+
+    if not sub_df.empty:
+        all_categories = sorted(sub_df["Category"].unique().tolist())
+        with rep_col2:
+            selected_cat = st.selectbox(
+                "ఐటమ్ / కేటగిరీని ఎంచుకోండి", all_categories, key="item_cat_select"
+            )
+
+        cat_filtered_df = sub_df[sub_df["Category"] == selected_cat]
+
+        if not cat_filtered_df.empty:
+            st.write(
+                f"👉 **{selected_cat}** ({report_type}) - నెలవారీ ఆటోమేటిక్"
+                " సమ్మరీ:"
+            )
+
+            # నెలవారీ టోటల్స్ బాక్స్
+            monthly_summary = (
+                cat_filtered_df.groupby("Month")["Amount"].sum().reset_index()
+            )
+            monthly_summary.columns = ["Month (నెల)", "Total Amount (₹)"]
+
+            m_sum_col, m_det_col = st.columns([1, 2])
+            with m_sum_col:
+                st.dataframe(monthly_summary, use_container_width=True)
+                cat_total = cat_filtered_df["Amount"].sum()
+                st.info(
+                    f"📌 **{selected_cat}** మొత్తం قيمة: **₹"
+                    f" {cat_total:,.2f}**"
+                )
+
+            with m_det_col:
+                st.write("📋 **అన్ని వివరాలు (Detailed Entries):**")
+                st.dataframe(
+                    cat_filtered_df[
+                        [
+                            "S NO",
+                            "Date",
+                            "Month",
+                            "Description",
+                            "Amount",
+                            "Payment Mode",
+                        ]
+                    ],
+                    use_container_width=True,
+                )
+        else:
+            st.info("ఈ ఐటమ్‌కు సంబంధించిన ఎంట్రీలు ఏవీ లేవు.")
+    else:
+        st.info("ఈ విభాగంలో ఇంకా ఎంట్రీలు నమోదు చేయలేదు.")
+
     st.markdown("---")
     st.subheader("❌ తప్పుగా పడిన ఎంట్రీని తొలగించండి (Delete Entry)")
     del_col1, del_col2 = st.columns([2, 1])
@@ -327,8 +406,8 @@ else:
         " ప్రారంభించండి!"
     )
 
-# చివర్లో ధన్యవాదములు
+# 1. పెద్ద సైజు ధన్యవాదములు హెడ్డింగ్
 st.markdown(
-    '<div class="footer-text">🙏 <b>ధన్యవాదములు (Dhanyavadhamulu)</b> 🙏</div>',
+    '<div class="footer-text">🙏 ధన్యవాదములు (Dhanyavadhamulu) 🙏</div>',
     unsafe_allow_html=True,
 )
