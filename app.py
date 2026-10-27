@@ -76,7 +76,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 1. పెద్ద సైజు స్వాగతం హెడ్డింగ్
+# పెద్ద సైజు స్వాగతం హెడ్డింగ్
 st.markdown(
     '<div class="welcome-text">🙏 స్వాగతం (Swagatham) 🙏</div>',
     unsafe_allow_html=True,
@@ -117,7 +117,7 @@ except FileNotFoundError:
         ]
     )
 
-# 2. సేవ్ సక్సెస్ మెసేజ్ చూపించడం (మళ్లీ లోడ్ అయినా కనిపించేలా)
+# సేవ్ సక్సెస్ మెసేజ్ చూపించడం
 if "show_success" in st.session_state and st.session_state["show_success"]:
     st.success("✅ Save Successfully! ట్రాన్సాక్షన్ విజయవంతంగా సేవ్ చేయబడింది.")
     st.toast("🎉 ట్రాన్సాక్షన్ సేవ్ అయింది!")
@@ -191,6 +191,8 @@ with col1:
             "సిలిండర్ / గ్యాస్ బిల్లు",
             "వాటర్ బిల్లు / క్యాన్లు",
             "పూజ సామాగ్రి",
+            "బాబు పాకెట్ మనీ (Babu Pocket Money)",  # కొత్తగా చేర్చబడినవి
+            "పాపా పాకెట్ మనీ (Papa Pocket Money)",  # కొత్తగా చేర్చబడినవి
             "ఇతరాలు",
         ]
 
@@ -311,7 +313,7 @@ if not df.empty:
     scol2.metric(f"💸 {selected_month_filter} ఖర్చు", f"₹ {m_expense:,.2f}")
     scol3.metric(f"⚖️ {selected_month_filter} మిగులు", f"₹ {m_balance:,.2f}")
 
-    # 3. ఐటమ్ / కేటగిరీ వారీగా నెలవారీ విశ్లేషణ విభాగం
+    # ఐటమ్ / కేటగిరీ వారీగా నెలవారీ విశ్లేషణ విభాగం
     st.markdown("---")
     st.subheader("📈 ఐటమ్ / కేటగిరీ వారీగా నెలవారీ విశ్లేషణ")
 
@@ -341,7 +343,6 @@ if not df.empty:
                 " సమ్మరీ:"
             )
 
-            # నెలవారీ టోటల్స్ బాక్స్
             monthly_summary = (
                 cat_filtered_df.groupby("Month")["Amount"].sum().reset_index()
             )
@@ -352,7 +353,7 @@ if not df.empty:
                 st.dataframe(monthly_summary, use_container_width=True)
                 cat_total = cat_filtered_df["Amount"].sum()
                 st.info(
-                    f"📌 **{selected_cat}** మొత్తం قيمة: **₹"
+                    f"📌 **{selected_cat}** మొత్తం: **₹"
                     f" {cat_total:,.2f}**"
                 )
 
@@ -406,7 +407,7 @@ else:
         " ప్రారంభించండి!"
     )
 
-# 1. పెద్ద సైజు ధన్యవాదములు హెడ్డింగ్
+# పెద్ద సైజు ధన్యవాదములు హెడ్డింగ్
 st.markdown(
     '<div class="footer-text">🙏 ధన్యవాదములు (Dhanyavadhamulu) 🙏</div>',
     unsafe_allow_html=True,
