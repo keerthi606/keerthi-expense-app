@@ -67,8 +67,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Modati lo Swagatham
-st.markdown("### 🙏 **Swagatham** 🙏")
+# మొదటిలో స్వాగతం
+st.markdown("### 🙏 **స్వాగతం (Swagatham)** 🙏")
 
 st.markdown(
     """
@@ -81,14 +81,17 @@ st.markdown(
 
 DATA_FILE = "expenses_data.csv"
 
-# డేటా లోడ్ చేయడం మరియు dayfirst=True తో సరైన డేట్/నెల ఫార్మాట్‌లోకి మార్చడం
+# డేటా లోడ్ చేయడం మరియు మిక్స్డ్ డేట్ ఫార్మాట్‌లను సరిగ్గా పార్స్ చేయడం
 try:
     df = pd.read_csv(DATA_FILE)
     if not df.empty and "Date" in df.columns:
-        # dayfirst=True pettadam valla day mundu, month tarvata correct ga parse avutundi
-        parsed_dates = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
+        parsed_dates = pd.to_datetime(
+            df["Date"], format="mixed", dayfirst=True, errors="coerce"
+        )
         df["Date"] = parsed_dates.dt.strftime("%d-%m-%Y")
         df["Month"] = parsed_dates.dt.strftime("%B %Y")
+        # ఏవైనా అనవసరమైన తప్పు రోస్ ఉంటే తొలగించడానికి
+        df = df.dropna(subset=["Date"])
 except FileNotFoundError:
     df = pd.DataFrame(
         columns=[
@@ -225,7 +228,7 @@ if st.button("💾 SAVE TRANSACTION"):
         st.error(error_message)
     else:
         formatted_date = date.strftime("%d-%m-%Y")
-        formatted_month = date.strftime("%B %Y")  # ఉదాహరణకు: August 2026
+        formatted_month = date.strftime("%B %Y")
 
         new_row = {
             "S NO": next_sno,
@@ -324,8 +327,8 @@ else:
         " ప్రారంభించండి!"
     )
 
-# Chivaralo Dhanyavadhamulu
+# చివర్లో ధన్యవాదములు
 st.markdown(
-    '<div class="footer-text">🙏 <b>Dhanyavadhamulu</b> 🙏</div>',
+    '<div class="footer-text">🙏 <b>ధన్యవాదములు (Dhanyavadhamulu)</b> 🙏</div>',
     unsafe_allow_html=True,
 )
