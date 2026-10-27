@@ -72,11 +72,14 @@ DATA_FILE = "expenses_data.csv"
 try:
     df = pd.read_csv(DATA_FILE)
     if "Date" in df.columns:
+        # తేదీని సరైన ఫార్మాట్‌లోకి మార్చడం (DD-MM-YYYY)
         df["Date"] = pd.to_datetime(df["Date"], errors="coerce").dt.strftime(
-            "%Y-%m-%d"
+            "%d-%m-%Y"
         )
     if "Month" not in df.columns and "Date" in df.columns:
-        df["Month"] = pd.to_datetime(df["Date"]).dt.strftime("%Y-%m")
+        df["Month"] = pd.to_datetime(
+            df["Date"], format="%d-%m-%Y", errors="coerce"
+        ).dt.strftime("%B %Y")
 except FileNotFoundError:
     df = pd.DataFrame(
         columns=[
@@ -210,11 +213,14 @@ if st.button("💾 SAVE TRANSACTION"):
     if not validation_passed:
         st.error(error_message)
     else:
-        selected_month = date.strftime("%Y-%m")
+        # తేదీని 'DD-MM-YYYY' మరియు నెలని 'Month YYYY' రూపంలో సేవ్ చేయడం
+        formatted_date = date.strftime("%d-%m-%Y")
+        formatted_month = date.strftime("%B %Y")  # ఉదాహరణ: August 2026
+
         new_row = {
             "S NO": next_sno,
-            "Date": str(date),
-            "Month": selected_month,
+            "Date": formatted_date,
+            "Month": formatted_month,
             "Transaction Type": trans_type,
             "Category": category,
             "Description": description.strip(),
@@ -230,7 +236,7 @@ st.markdown("---")
 st.subheader("📊 ఖర్చుల నివేదిక (Expenses Summary)")
 
 if not df.empty:
-    available_months = sorted(df["Month"].unique().tolist(), reverse=True)
+    available_months = sorted(df["Month"].unique().tolist())
     selected_month_filter = st.selectbox(
         "నివేదిక కోసం నెలని ఎంచుకోండి (Select Month)", available_months
     )
@@ -240,11 +246,11 @@ if not df.empty:
     st.write(f"📅 నెల: **{selected_month_filter}** వివరాలు")
     st.dataframe(month_filtered_df, use_container_width=True)
 
-    # Excel Download using openpyxl engine
+    # Excel Download
     excel_buffer = BytesIO()
     with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
         month_filtered_df.to_excel(
-            writer, sheet_name=f"Expenses_{selected_month_filter}", index=False
+            writer, sheet_name=f"Expenses", index=False
         )
     excel_data = excel_buffer.getvalue()
 
