@@ -53,10 +53,22 @@ st.markdown(
         color: #1f3c88;
         font-weight: 700;
     }
+    .footer-text {
+        text-align: center;
+        color: #555555;
+        font-size: 16px;
+        font-weight: 600;
+        margin-top: 40px;
+        padding: 15px;
+        border-top: 2px dashed #ccc;
+    }
     </style>
 """,
     unsafe_allow_html=True,
 )
+
+# Modati lo Swagatham
+st.markdown("### 🙏 **Swagatham** 🙏")
 
 st.markdown(
     """
@@ -69,18 +81,14 @@ st.markdown(
 
 DATA_FILE = "expenses_data.csv"
 
-# డేటా లోడ్ చేయడం మరియు తేదీలు, నెలలను సరిగ్గా సెట్ చేయడం
+# డేటా లోడ్ చేయడం మరియు dayfirst=True తో సరైన డేట్/నెల ఫార్మాట్‌లోకి మార్చడం
 try:
     df = pd.read_csv(DATA_FILE)
     if not df.empty and "Date" in df.columns:
-        df["Date"] = pd.to_datetime(df["Date"], errors="coerce").dt.strftime(
-            "%d-%m-%Y"
-        )
-    if not df.empty and "Month" in df.columns:
-        # Month column proper format lo undela chudatam
-        df["Month"] = pd.to_datetime(
-            df["Date"], format="%d-%m-%Y", errors="coerce"
-        ).dt.strftime("%B %Y")
+        # dayfirst=True pettadam valla day mundu, month tarvata correct ga parse avutundi
+        parsed_dates = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
+        df["Date"] = parsed_dates.dt.strftime("%d-%m-%Y")
+        df["Month"] = parsed_dates.dt.strftime("%B %Y")
 except FileNotFoundError:
     df = pd.DataFrame(
         columns=[
@@ -217,9 +225,7 @@ if st.button("💾 SAVE TRANSACTION"):
         st.error(error_message)
     else:
         formatted_date = date.strftime("%d-%m-%Y")
-        formatted_month = date.strftime(
-            "%B %Y"
-        )  # ఉదాహరణకు: October 2026
+        formatted_month = date.strftime("%B %Y")  # ఉదాహరణకు: August 2026
 
         new_row = {
             "S NO": next_sno,
@@ -234,7 +240,6 @@ if st.button("💾 SAVE TRANSACTION"):
         df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
         df.to_csv(DATA_FILE, index=False)
 
-        # స్పష్టంగా సక్సెస్ మెసేజ్ చూపించడం
         st.success(
             "✅ Save Successfully! ట్రాన్సాక్షన్ విజయవంతంగా సేవ్ చేయబడింది."
         )
@@ -318,3 +323,9 @@ else:
         "ℹ️ ఇంతవరకు ఎటువంటి ఎంట్రీలు లేవు. కొత్త ట్రాన్సాక్షన్ జోడించి"
         " ప్రారంభించండి!"
     )
+
+# Chivaralo Dhanyavadhamulu
+st.markdown(
+    '<div class="footer-text">🙏 <b>Dhanyavadhamulu</b> 🙏</div>',
+    unsafe_allow_html=True,
+)
