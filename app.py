@@ -76,7 +76,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Swagatham Heading
+# 1. Swagatham mariyu Heading modatiga chupinchadam
 st.markdown(
     '<div class="welcome-text">🙏 Swagatham (స్వాగతం) 🙏</div>',
     unsafe_allow_html=True,
@@ -126,38 +126,54 @@ if "show_success" in st.session_state and st.session_state["show_success"]:
     st.toast("🎉 Transaction save aindi!")
     st.session_state["show_success"] = False
 
-# Overall Metrics lekkinchadam (Top section)
-if not df.empty:
-    total_income = df[df["Transaction Type"] == "INCOME"]["Amount"].sum()
-    total_expense = df[df["Transaction Type"] == "EXPENSE"]["Amount"].sum()
-    
-    total_cc_expenses = df[
-        (df["Transaction Type"] == "EXPENSE")
-        & (df["Payment Mode"] == "CREDIT CARD")
-    ]["Amount"].sum()
-    
-    total_bank_expenses = total_expense - total_cc_expenses
-    total_bank_balance = total_income - total_bank_expenses
+st.markdown("---")
 
-    mcol1, mcol2, mcol3, mcol4 = st.columns(4)
-    mcol1.metric("💰 Motham Adayam", f"₹ {total_income:,.2f}")
-    mcol2.metric(
-        "💸 Motham Kharchu", 
-        f"₹ {total_expense:,.2f}",
-        delta=f"Bank: ₹{total_bank_expenses:,.2f} | CC: ₹{total_cc_expenses:,.2f}",
-        delta_color="off"
-    )
-    mcol3.metric("🏦 Bank Balance", f"₹ {total_bank_balance:,.2f}")
-    mcol4.metric("💳 Credit Card Kharchu", f"₹ {total_cc_expenses:,.2f}")
-    st.markdown("---")
-
-st.subheader("📝 Kothha Transaction Jodinchandi")
-
-# House selection mida modatiga pettadam kosம் ikkada petnam
-house_choice = st.selectbox(
-    "Illu / Property (House / Property) *", 
+# 2. Heading taruvatha House selection pettadam
+st.subheader("🏠 Illu / Property Enchuko (Select House)")
+selected_house = st.selectbox(
+    "Deyantho pani undho aa illu/property ni enchukondi *", 
     ["House 1 (Ma Kutumbham)", "House 2 (Verhe Kutumbham)", "House 3 (Verhe Kutumbham)", "Common / General"]
 )
+
+st.markdown("---")
+
+# Data ni select chesina house ki filter cheyyadam
+if not df.empty:
+    house_df = df[df["House"] == selected_house]
+else:
+    house_df = pd.DataFrame(columns=df.columns)
+
+# 3. Select chesina house ki matrame Total Income, Total Expense, Balance chupinchadam
+if not house_df.empty:
+    h_income = house_df[house_df["Transaction Type"] == "INCOME"]["Amount"].sum()
+    h_expense = house_df[house_df["Transaction Type"] == "EXPENSE"]["Amount"].sum()
+    
+    h_cc_expenses = house_df[
+        (house_df["Transaction Type"] == "EXPENSE")
+        & (house_df["Payment Mode"] == "CREDIT CARD")
+    ]["Amount"].sum()
+    
+    h_bank_expenses = h_expense - h_cc_expenses
+    h_bank_balance = h_income - h_bank_expenses
+
+    st.write(f"📊 **{selected_house}** yokka Samagra Vivaralu:")
+    mcol1, mcol2, mcol3, mcol4 = st.columns(4)
+    mcol1.metric("💰 Motham Adayam", f"₹ {h_income:,.2f}")
+    mcol2.metric(
+        "💸 Motham Kharchu", 
+        f"₹ {h_expense:,.2f}",
+        delta=f"Bank: ₹{h_bank_expenses:,.2f} | CC: ₹{h_cc_expenses:,.2f}",
+        delta_color="off"
+    )
+    mcol3.metric("🏦 Bank Balance", f"₹ {h_bank_balance:,.2f}")
+    mcol4.metric("💳 Credit Card Kharchu", f"₹ {h_cc_expenses:,.2f}")
+else:
+    st.info(f"ℹ️ {selected_house} ki sambandhinchina vivaralu inthavaraku emi levu. Kinda entry jodinchaandi!")
+
+st.markdown("---")
+
+# 4. Kothha Transaction Jodinchu Option (Select chesina house ke automatic ga apply avuthundi)
+st.subheader(f"📝 {selected_house} koraku Kothha Transaction Jodinchandi")
 
 col1, col2 = st.columns(2)
 
@@ -284,7 +300,7 @@ if st.button("💾 SAVE TRANSACTION"):
             "S NO": next_sno,
             "Date": formatted_date,
             "Month": formatted_month,
-            "House": house_choice,
+            "House": selected_house,
             "Transaction Type": trans_type,
             "Category": category,
             "Description": description.strip(),
@@ -299,31 +315,17 @@ if st.button("💾 SAVE TRANSACTION"):
         st.rerun()
 
 st.markdown("---")
-st.subheader("📊 Kharchula Nivedika (Expenses Summary)")
+st.subheader(f"📊 {selected_house} Kharchula Nivedika (Expenses Summary)")
 
-if not df.empty:
-    available_months = sorted(df["Month"].unique().tolist(), reverse=True)
-    
-    fcol1, fcol2 = st.columns(2)
-    with fcol1:
-        selected_month_filter = st.selectbox(
-            "Nivedika kosam nelani ennukondi (Select Month)", available_months
-        )
-    with fcol2:
-        house_filter_options = [
-            "Anni Illu (All Houses)", 
-            "House 1 (Ma Kutumbham)", 
-            "House 2 (Verhe Kutumbham)", 
-            "House 3 (Verhe Kutumbham)", 
-            "Common / General"
-        ]
-        selected_house_filter = st.selectbox("Illu variga filter cheyandi", house_filter_options)
+if not house_df.empty:
+    available_months = sorted(house_df["Month"].unique().tolist(), reverse=True)
+    selected_month_filter = st.selectbox(
+        "Nivedika kosam nelani ennukondi (Select Month)", available_months
+    )
 
-    month_filtered_df = df[df["Month"] == selected_month_filter]
-    if selected_house_filter != "Anni Illu (All Houses)":
-        month_filtered_df = month_filtered_df[month_filtered_df["House"] == selected_house_filter]
+    month_filtered_df = house_df[house_df["Month"] == selected_month_filter]
 
-    st.write(f"📅 Nela: **{selected_month_filter}** | Illu: **{selected_house_filter}** Vivaralu")
+    st.write(f"📅 Nela: **{selected_month_filter}** | Illu: **{selected_house}** Vivaralu")
     st.dataframe(month_filtered_df, use_container_width=True)
 
     # Excel Download
@@ -337,12 +339,12 @@ if not df.empty:
     st.download_button(
         label="📥 Ee nela nivedikanu Excel lo download chesukondi (Download as Excel)",
         data=excel_data,
-        file_name=f"keerthi_expenses_report.xlsx",
+        file_name=f"keerthi_expenses_{selected_house}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True,
     )
 
-    # Summary cards based on filter
+    # Month-wise summary cards for selected house
     m_income = month_filtered_df[month_filtered_df["Transaction Type"] == "INCOME"]["Amount"].sum()
     m_total_expense = month_filtered_df[month_filtered_df["Transaction Type"] == "EXPENSE"]["Amount"].sum()
     
@@ -355,15 +357,15 @@ if not df.empty:
     m_bank_balance = m_income - m_bank_expenses
 
     scol1, scol2, scol3, scol4 = st.columns(4)
-    scol1.metric(f"💰 Adayam", f"₹ {m_income:,.2f}")
+    scol1.metric(f"💰 {selected_month_filter} Adayam", f"₹ {m_income:,.2f}")
     scol2.metric(
-        f"💸 Kharchu", 
+        f"💸 {selected_month_filter} Kharchu", 
         f"₹ {m_total_expense:,.2f}",
         delta=f"Bank: ₹{m_bank_expenses:,.2f} | CC: ₹{m_cc_expenses:,.2f}",
         delta_color="off"
     )
-    scol3.metric(f"🏦 Bank Balance", f"₹ {m_bank_balance:,.2f}")
-    scol4.metric(f"💳 CC Kharchu", f"₹ {m_cc_expenses:,.2f}")
+    scol3.metric(f"🏦 {selected_month_filter} Bank Balance", f"₹ {m_bank_balance:,.2f}")
+    scol4.metric(f"💳 {selected_month_filter} CC Kharchu", f"₹ {m_cc_expenses:,.2f}")
 
     # Item / Category wise analysis section
     st.markdown("---")
@@ -378,7 +380,7 @@ if not df.empty:
             key="item_rep_type",
         )
 
-    sub_df = df[df["Transaction Type"] == report_type]
+    sub_df = house_df[house_df["Transaction Type"] == report_type]
 
     if not sub_df.empty:
         all_categories = sorted(sub_df["Category"].unique().tolist())
@@ -398,59 +400,3 @@ if not df.empty:
             monthly_summary.columns = ["Month (Nela)", "Total Amount (₹)"]
 
             m_sum_col, m_det_col = st.columns([1, 2])
-            with m_sum_col:
-                st.dataframe(monthly_summary, use_container_width=True)
-                cat_total = cat_filtered_df["Amount"].sum()
-                st.info(f"📌 **{selected_cat}** motham: **₹ {cat_total:,.2f}**")
-
-            with m_det_col:
-                st.write("📋 **Anni vivaralu (Detailed Entries):**")
-                st.dataframe(
-                    cat_filtered_df[
-                        [
-                            "S NO",
-                            "Date",
-                            "Month",
-                            "House",
-                            "Description",
-                            "Amount",
-                            "Payment Mode",
-                        ]
-                    ],
-                    use_container_width=True,
-                )
-        else:
-            st.info("Ee item-ku sambandhinchina entries evi levu.")
-    else:
-        st.info("Ee vibhagamlo inka entries namodhu cheyaledu.")
-
-    st.markdown("---")
-    st.subheader("❌ Thappuga padina entryni tholaginchandi (Delete Entry)")
-    del_col1, del_col2 = st.columns([2, 1])
-    with del_col1:
-        sno_list = [None] + df["S NO"].tolist()
-        sno_to_delete = st.selectbox(
-            "Tholaginchavalasina S NO ni enchukondi",
-            sno_list,
-            format_func=lambda x: "Dayachesi S NO enchukondi..." if x is None else f"S NO: {x}",
-        )
-    with del_col2:
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("🗑️ DELETE ROW"):
-            if sno_to_delete is not None:
-                df = df[df["S NO"] != sno_to_delete]
-                if not df.empty:
-                    df["S NO"] = range(1, len(df) + 1)
-                df.to_csv(DATA_FILE, index=False)
-                st.success("🗑️ Entry vijayavantamga tholaginchabadindi!")
-                st.rerun()
-            else:
-                st.warning("⚠️ Dayachesi tholaginchanduku oka S NO ni enchukondi!")
-else:
-    st.info("ℹ️ Inthavaraku entuvali entries levu. Kothha transaction jodinchi aarambinchandi!")
-
-# Footer Heading
-st.markdown(
-    '<div class="footer-text">🙏 Dhanyavadhamulu (ధన్యవాదములు) 🙏</div>',
-    unsafe_allow_html=True,
-)
