@@ -76,7 +76,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Swagatham Heading
+# స్వాగతం హెడ్డింగ్
 st.markdown(
     '<div class="welcome-text">🙏 స్వాగతం (Swagatham) 🙏</div>',
     unsafe_allow_html=True,
@@ -93,7 +93,7 @@ st.markdown(
 
 DATA_FILE = "expenses_data.csv"
 
-# Data load cheyyadam mariyu dates/months set cheyyadam
+# డేటా లోడ్ చేయడం మరియు తేదీలు/నెలలను సరిగ్గా సెట్ చేయడం
 try:
     df = pd.read_csv(DATA_FILE)
     if not df.empty and "Date" in df.columns:
@@ -117,37 +117,34 @@ except FileNotFoundError:
         ]
     )
 
-# Save success message chupinchadam
+# సేవ్ సక్సెస్ మెసేజ్ చూపించడం
 if "show_success" in st.session_state and st.session_state["show_success"]:
     st.success("✅ Save Successfully! ట్రాన్సాక్షన్ విజయవంతంగా సేవ్ చేయబడింది.")
     st.toast("🎉 ట్రాన్సాక్షన్ సేవ్ అయింది!")
     st.session_state["show_success"] = False
 
-# Balance mariyu Credit Card vivaralu lekkinchadam
+# మీ కోరిక మేరకు 4 ముఖ్యమైన మెట్రిక్స్ లెక్కించడం
 if not df.empty:
     total_income = df[df["Transaction Type"] == "INCOME"]["Amount"].sum()
-
-    # Credit card kakunda migatha kharchulu (Bank/Cash nunchi poyinavi)
-    non_cc_expenses = df[
-        (df["Transaction Type"] == "EXPENSE")
-        & (df["Payment Mode"] != "CREDIT CARD")
-    ]["Amount"].sum()
-
-    actual_cash_bank_balance = total_income - non_cc_expenses
-
-    # Motham Kharchu (Total Expense)
     total_expense = df[df["Transaction Type"] == "EXPENSE"]["Amount"].sum()
+    
+    # క్రెడిట్ కార్డ్ ద్వారా చేసిన ఖర్చులు
+    cc_expenses = df[
+        (df["Transaction Type"] == "EXPENSE")
+        & (df["Payment Mode"] == "CREDIT CARD")
+    ]["Amount"].sum()
+    
+    # బ్యాంకు/క్యాష్ ద్వారా చేసిన ఖర్చులు (మొత్తం ఖర్చులో నుండి CC ఖర్చులు పోను)
+    non_cc_expenses = total_expense - cc_expenses
+    
+    # బ్యాంకు బ్యాలెన్స్ (మొత్తం ఆదాయం నుండి బ్యాంకు/క్యాష్ ఖర్చులు మైనస్ చేయగా వచ్చేది)
+    bank_balance = total_income - non_cc_expenses
 
-    # Credit Card Outstanding mariyu Limit (₹62,000 limit, Due ₹35,285)
-    current_cc_due = 35285.00
-    available_cc_limit = 62000.00 - current_cc_due
-
-    mcol1, mcol2, mcol3, mcol4, mcol5 = st.columns(5)
+    mcol1, mcol2, mcol3, mcol4 = st.columns(4)
     mcol1.metric("💰 మొత్తం ఆదాయం", f"₹ {total_income:,.2f}")
     mcol2.metric("💸 మొత్తం ఖర్చు", f"₹ {total_expense:,.2f}")
-    mcol3.metric("🏦 బ్యాంక్ / క్యాష్ బ్యాలెన్స్", f"₹ {actual_cash_bank_balance:,.2f}")
-    mcol4.metric("💳 CC అవుట్‌స్టాండింగ్ (Due)", f"₹ {current_cc_due:,.2f}")
-    mcol5.metric("🟢 CC అవైలబుల్ లిమిట్", f"₹ {available_cc_limit:,.2f}")
+    mcol3.metric("🏦 బ్యాంకు బ్యాలెన్స్", f"₹ {bank_balance:,.2f}")
+    mcol4.metric("💳 క్రెడిట్ కార్డ్ ఖర్చు", f"₹ {cc_expenses:,.2f}")
     st.markdown("---")
 
 st.subheader("📝 కొత్త ట్రాన్సాక్షన్ జోడించండి")
@@ -432,7 +429,7 @@ else:
         "ℹ️ ఇంతవరకు ఎటువంటి ఎంట్రీలు లేవు. కొత్త ట్రాన్సాక్షన్ జోడించి ప్రారంభించండి!"
     )
 
-# Footer Heading
+# ధన్యవాదములు హెడ్డింగ్
 st.markdown(
     '<div class="footer-text">🙏 ధన్యవాదములు (Dhanyavadhamulu) 🙏</div>',
     unsafe_allow_html=True,
