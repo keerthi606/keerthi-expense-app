@@ -153,6 +153,12 @@ if not df.empty:
 
 st.subheader("📝 Kothha Transaction Jodinchandi")
 
+# House selection mida modatiga pettadam kosம் ikkada petnam
+house_choice = st.selectbox(
+    "Illu / Property (House / Property) *", 
+    ["House 1 (Ma Kutumbham)", "House 2 (Verhe Kutumbham)", "House 3 (Verhe Kutumbham)", "Common / General"]
+)
+
 col1, col2 = st.columns(2)
 
 with col1:
@@ -163,11 +169,6 @@ with col1:
     )
     st.number_input(
         "S NO * (Automatic)", value=next_sno, disabled=True, key="auto_sno"
-    )
-
-    house_choice = st.selectbox(
-        "Illu / Property (House / Property) *", 
-        ["House 1 (Ma Kutumbham)", "House 2 (Verhe Kutumbham)", "House 3 (Verhe Kutumbham)", "Common / General"]
     )
 
     date = st.date_input("Date *")
