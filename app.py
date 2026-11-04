@@ -76,7 +76,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# స్వాగతం హెడ్డింగ్
+# Swagatham Heading
 st.markdown(
     '<div class="welcome-text">🙏 స్వాగతం (Swagatham) 🙏</div>',
     unsafe_allow_html=True,
@@ -93,7 +93,7 @@ st.markdown(
 
 DATA_FILE = "expenses_data.csv"
 
-# డేటా లోడ్ చేయడం మరియు తేదీలు/నెలలను సరిగ్గా సెట్ చేయడం
+# Data load cheyyadam mariyu dates/months set cheyyadam
 try:
     df = pd.read_csv(DATA_FILE)
     if not df.empty and "Date" in df.columns:
@@ -117,17 +117,17 @@ except FileNotFoundError:
         ]
     )
 
-# సేవ్ సక్సెస్ మెసేజ్ చూపించడం
+# Save success message chupinchadam
 if "show_success" in st.session_state and st.session_state["show_success"]:
     st.success("✅ Save Successfully! ట్రాన్సాక్షన్ విజయవంతంగా సేవ్ చేయబడింది.")
     st.toast("🎉 ట్రాన్సాక్షన్ సేవ్ అయింది!")
     st.session_state["show_success"] = False
 
-# బ్యాలెన్స్ మరియు క్రెడిట్ కార్డ్ వివరాలు లెక్కించడం
+# Balance mariyu Credit Card vivaralu lekkinchadam
 if not df.empty:
     total_income = df[df["Transaction Type"] == "INCOME"]["Amount"].sum()
 
-    # క్రెడిట్ కార్డ్ కాకుండా ఇతర ఖర్చులు (బ్యాంక్/క్యాష్ నుండి పోయినవి)
+    # Credit card kakunda migatha kharchulu (Bank/Cash nunchi poyinavi)
     non_cc_expenses = df[
         (df["Transaction Type"] == "EXPENSE")
         & (df["Payment Mode"] != "CREDIT CARD")
@@ -135,21 +135,19 @@ if not df.empty:
 
     actual_cash_bank_balance = total_income - non_cc_expenses
 
-    # క్రెడిట్ కార్డ్ అవుట్‌స్టాండింగ్ బాకీ
-    current_cc_due = 35285.00  
+    # Motham Kharchu (Total Expense)
+    total_expense = df[df["Transaction Type"] == "EXPENSE"]["Amount"].sum()
+
+    # Credit Card Outstanding mariyu Limit (₹62,000 limit, Due ₹35,285)
+    current_cc_due = 35285.00
     available_cc_limit = 62000.00 - current_cc_due
 
-    mcol1, mcol2, mcol3, mcol4 = st.columns(4)
+    mcol1, mcol2, mcol3, mcol4, mcol5 = st.columns(5)
     mcol1.metric("💰 మొత్తం ఆదాయం", f"₹ {total_income:,.2f}")
-    mcol2.metric(
-        "🏦 బ్యాంక్ / క్యాష్ బ్యాలెన్స్", f"₹ {actual_cash_bank_balance:,.2f}"
-    )
-    mcol3.metric(
-        "💳 CC అవుట్‌స్టాండింగ్ (Due)", f"₹ {current_cc_due:,.2f}"
-    )
-    mcol4.metric(
-        "🟢 CC అవైలబుల్ లిమిట్", f"₹ {available_cc_limit:,.2f}"
-    )
+    mcol2.metric("💸 మొత్తం ఖర్చు", f"₹ {total_expense:,.2f}")
+    mcol3.metric("🏦 బ్యాంక్ / క్యాష్ బ్యాలెన్స్", f"₹ {actual_cash_bank_balance:,.2f}")
+    mcol4.metric("💳 CC అవుట్‌స్టాండింగ్ (Due)", f"₹ {current_cc_due:,.2f}")
+    mcol5.metric("🟢 CC అవైలబుల్ లిమిట్", f"₹ {available_cc_limit:,.2f}")
     st.markdown("---")
 
 st.subheader("📝 కొత్త ట్రాన్సాక్షన్ జోడించండి")
@@ -276,107 +274,3 @@ if st.button("💾 SAVE TRANSACTION"):
     if not validation_passed:
         st.error(error_message)
     else:
-        formatted_date = date.strftime("%d-%m-%Y")
-        formatted_month = date.strftime("%B %Y")
-
-        new_row = {
-            "S NO": next_sno,
-            "Date": formatted_date,
-            "Month": formatted_month,
-            "Transaction Type": trans_type,
-            "Category": category,
-            "Description": description.strip(),
-            "Amount": amount,
-            "Payment Mode": payment_mode,
-        }
-        df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-        df.to_csv(DATA_FILE, index=False)
-
-        st.session_state["show_success"] = True
-        st.balloons()
-        st.rerun()
-
-st.markdown("---")
-st.subheader("📊 ఖర్చుల నివేదిక (Expenses Summary)")
-
-if not df.empty:
-    available_months = sorted(df["Month"].unique().tolist(), reverse=True)
-    selected_month_filter = st.selectbox(
-        "నివేదిక కోసం నెలని ఎంచుకోండి (Select Month)", available_months
-    )
-
-    month_filtered_df = df[df["Month"] == selected_month_filter]
-
-    st.write(f"📅 నెల: **{selected_month_filter}** వివరాలు")
-    st.dataframe(month_filtered_df, use_container_width=True)
-
-    # Excel Download
-    excel_buffer = BytesIO()
-    with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
-        month_filtered_df.to_excel(
-            writer, sheet_name=f"Expenses", index=False
-        )
-    excel_data = excel_buffer.getvalue()
-
-    st.download_button(
-        label=(
-            "📥 ఈ నెల నివేదికను ఎక్సెల్ లో డౌన్‌లోడ్ చేసుకోండి (Download as"
-            " Excel)"
-        ),
-        data=excel_data,
-        file_name=f"keerthi_expenses_{selected_month_filter}.xlsx",
-        mime=(
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        ),
-        use_container_width=True,
-    )
-
-    m_income = month_filtered_df[month_filtered_df["Transaction Type"] == "INCOME"][
-        "Amount"
-    ].sum()
-    m_expense = month_filtered_df[
-        month_filtered_df["Transaction Type"] == "EXPENSE"
-    ]["Amount"].sum()
-    m_balance = m_income - m_expense
-
-    scol1, scol2, scol3 = st.columns(3)
-    scol1.metric(f"💰 {selected_month_filter} ఆదాయం", f"₹ {m_income:,.2f}")
-    scol2.metric(f"💸 {selected_month_filter} ఖర్చు", f"₹ {m_expense:,.2f}")
-    scol3.metric(f"⚖️ {selected_month_filter} మిగులు", f"₹ {m_balance:,.2f}")
-
-    # ఐటమ్ / కేటగిరీ వారీగా నెలవారీ విశ్లేషణ విభాగం
-    st.markdown("---")
-    st.subheader("📈 ఐటమ్ / కేటగిరీ వారీగా నెలవారీ విశ్లేషణ")
-
-    rep_col1, rep_col2 = st.columns(2)
-    with rep_col1:
-        report_type = st.radio(
-            "రకం ఎంచుకోండి (Transaction Type)",
-            ["EXPENSE", "INCOME"],
-            horizontal=True,
-            key="item_rep_type",
-        )
-
-    sub_df = df[df["Transaction Type"] == report_type]
-
-    if not sub_df.empty:
-        all_categories = sorted(sub_df["Category"].unique().tolist())
-        with rep_col2:
-            selected_cat = st.selectbox(
-                "ఐటమ్ / కేటగిరీని ఎంచుకోండి", all_categories, key="item_cat_select"
-            )
-
-        cat_filtered_df = sub_df[sub_df["Category"] == selected_cat]
-
-        if not cat_filtered_df.empty:
-            st.write(
-                f"👉 **{selected_cat}** ({report_type}) - నెలవారీ ఆటోమేటిక్"
-                " సమ్మరీ:"
-            )
-
-            monthly_summary = (
-                cat_filtered_df.groupby("Month")["Amount"].sum().reset_index()
-            )
-            monthly_summary.columns = ["Month (నెల)", "Total Amount (₹)"]
-
-            m
