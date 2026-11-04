@@ -76,9 +76,9 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Swagatham Heading
+# స్వాగతం హెడ్డింగ్
 st.markdown(
-    '<div class="welcome-text">🙏 Swagatham (స్వాగతం) 🙏</div>',
+    '<div class="welcome-text">🙏 స్వాగతం (Swagatham) 🙏</div>',
     unsafe_allow_html=True,
 )
 
@@ -93,7 +93,7 @@ st.markdown(
 
 DATA_FILE = "expenses_data.csv"
 
-# Data load cheyyadam mariyu dates/months set cheyyadam
+# డేటా లోడ్ చేయడం మరియు తేదీలు/నెలలను సరిగ్గా సెట్ చేయడం
 try:
     df = pd.read_csv(DATA_FILE)
     if not df.empty and "Date" in df.columns:
@@ -103,12 +103,16 @@ try:
         df["Date"] = parsed_dates.dt.strftime("%d-%m-%Y")
         df["Month"] = parsed_dates.dt.strftime("%B %Y")
         df = df.dropna(subset=["Date"])
+        if "Family / Member" not in df.columns:
+            df["Family / Member"] = "మా కుటుంబం (My Family)"
 except FileNotFoundError:
     df = pd.DataFrame(
         columns=[
             "S NO",
             "Date",
             "Month",
+            "Family / Member",
+            "House",
             "Transaction Type",
             "Category",
             "Description",
@@ -117,13 +121,13 @@ except FileNotFoundError:
         ]
     )
 
-# Save success message chupinchadam
+# సేవ్ సక్సెస్ మెసేజ్ చూపించడం
 if "show_success" in st.session_state and st.session_state["show_success"]:
-    st.success("✅ Save Successfully! Transaction vijayavantamga save aindi.")
-    st.toast("🎉 Transaction save aindi!")
+    st.success("✅ Save Successfully! ట్రాన్సాక్షన్ విజయవంతంగా సేవ్ చేయబడింది.")
+    st.toast("🎉 ట్రాన్సాక్షన్ సేవ్ అయింది!")
     st.session_state["show_success"] = False
 
-# Overall Metrics lekkinchadam (Top section)
+# Overall Metrics లెక్కించడం (Top section)
 if not df.empty:
     total_income = df[df["Transaction Type"] == "INCOME"]["Amount"].sum()
     total_expense = df[df["Transaction Type"] == "EXPENSE"]["Amount"].sum()
@@ -137,18 +141,18 @@ if not df.empty:
     total_bank_balance = total_income - total_bank_expenses
 
     mcol1, mcol2, mcol3, mcol4 = st.columns(4)
-    mcol1.metric("💰 Motham Adayam (Income)", f"₹ {total_income:,.2f}")
+    mcol1.metric("💰 మొత్తం ఆదాయం", f"₹ {total_income:,.2f}")
     mcol2.metric(
-        "💸 Motham Kharchu", 
+        "💸 మొత్తం ఖర్చు", 
         f"₹ {total_expense:,.2f}",
         delta=f"Bank: ₹{total_bank_expenses:,.2f} | CC: ₹{total_cc_expenses:,.2f}",
         delta_color="off"
     )
-    mcol3.metric("🏦 Bank Balance", f"₹ {total_bank_balance:,.2f}")
-    mcol4.metric("💳 Credit Card Kharchu", f"₹ {total_cc_expenses:,.2f}")
+    mcol3.metric("🏦 బ్యాంకు బ్యాలెన్స్", f"₹ {total_bank_balance:,.2f}")
+    mcol4.metric("💳 క్రెడిట్ కార్డ్ ఖర్చు", f"₹ {total_cc_expenses:,.2f}")
     st.markdown("---")
 
-st.subheader("📝 Kothha Transaction Jodinchandi")
+st.subheader("📝 కొత్త ట్రాన్సాక్షన్ జోడించండి")
 
 col1, col2 = st.columns(2)
 
@@ -159,12 +163,21 @@ with col1:
         else 1
     )
     st.number_input(
-        "S NO * (Automatic)", value=next_sno, disabled=True, key="auto_sno"
+        "S NO * (ఆటోమేటిక్)", value=next_sno, disabled=True, key="auto_sno"
+    )
+
+    family_choice = st.selectbox(
+        "కుటుంబం / వ్యక్తి పేరు (Family / Member) *", 
+        ["మా కుటుంబం (My Family)", "వేరే కుటుంబం / ఇతర వ్యక్తి (Other Family)"]
+    )
+
+    house_choice = st.selectbox(
+        "ఇల్లు / ప్రాపర్టీ (House / Property) *", ["House 1", "House 2", "Common / General"]
     )
 
     date = st.date_input("Date *")
     formatted_date_preview = date.strftime("%d-%m-%Y")
-    st.caption(f"📅 Enchukunna thedi roopam: **{formatted_date_preview}**")
+    st.caption(f"📅 ఎంచుకున్న తేదీ రూపం: **{formatted_date_preview}**")
 
     trans_type = st.radio(
         "Transaction Type *", ["INCOME", "EXPENSE"], horizontal=True
@@ -172,55 +185,55 @@ with col1:
 
     if trans_type == "INCOME":
         categories = [
-            "Enchukondi...",
-            "Opening Balance",
-            "Jeetham / Vethanam",
-            "Credit Card",
-            "Loan",
-            "Appu",
-            "Ithara Adayam",
+            "ఎంచుకోండి...",
+            "ఓపెనింగ్ బ్యాలెన్స్",
+            "జీతం / వేతనం",
+            "క్రెడిట్ కార్డ్",
+            "లోన్",
+            "అప్పు",
+            "ఇతర ఆదాయం",
         ]
     else:
         categories = [
-            "Enchukondi...",
-            "Saruku",
-            "Kooragayalu / Pandlu",
-            "Paalu",
-            "Perugu",
-            "Petrol",
-            "Credit Card Payment",
-            "Vehicle Maintenance",
-            "Appu",
-            "DWACRA Loan",
-            "Inti Runam (Home Loan)",
-            "Dvisakra Vahana Runam (Bike Loan)",
-            "Current Bill",
-            "Paper Bill",
-            "Tiffins / Hotel",
-            "Movies / Vinodham",
-            "Clothes",
-            "Toys",
-            "Mandulu / Medical",
-            "Mobile Recharge / Dish / Internet",
-            "School / College Fees",
-            "Inti Addae (House Rent)",
-            "Cylinder / Gas Bill",
-            "Water Bill / Cans",
-            "Pooja Samagri",
-            "Prayana Kharchulu (Travel Expenses)",
-            "Babu Pocket Money",
-            "Papa Pocket Money",
-            "Nanna Pocket Money",
-            "Amma Pocket Money",
-            "Marammatulu (Repairs & Maintenance)",
-            "Viralalu (Donations / Charity)",
-            "Seethala Paneeyalu (Cool Drinks)",
-            "Chicken / Mutton / Fish",
-            "Eggs",
-            "Insurance / LIC",
-            "Dry Fruits & Nuts",
-            "Subhakaryalu / Bahumatulu (Gifts & Functions)",
-            "Itharalu",
+            "ఎంచుకోండి...",
+            "సరుకులు",
+            "కూరగాయలు / పండ్లు",
+            "పాలు",
+            "పెరుగు",
+            "పెట్రోలు",
+            "క్రెడిట్ కార్డ్ పేమెంట్",
+            "వెహికల్ మెయింటెనెన్స్",
+            "అప్పు",
+            "డ్వాక్రా లోను",
+            "ఇంటి రుణం (Home Loan)",
+            "ద్విచక్ర వాహన రుణం (Bike Loan)",
+            "కరెంట్ బిల్లు",
+            "పేపర్ బిల్లు",
+            "టిఫిన్స్ / హోటల్",
+            "మూవీస్ / వినోదం",
+            "క్లోత్స్ / దుస్తులు",
+            "టాయిస్ / ఆటబొమ్మలు",
+            "మందులు / మెడికల్",
+            "మొబైల్ రీఛార్జ్ / డిష్ / ఇంటర్నెట్",
+            "స్కూల్ / కాలేజ్ ఫీజులు",
+            "ఇంటి అద్దె (House Rent)",
+            "సిలిండర్ / గ్యాస్ బిల్లు",
+            "వాటర్ బిల్లు / క్యాన్లు",
+            "పూజా సామాగ్రి",
+            "ప్రయాణ ఖర్చులు (Travel Expenses)",
+            "బాబు పాకెట్ మనీ (Babu Pocket Money)",
+            "పాపా పాకెట్ మనీ (Papa Pocket Money)",
+            "నాన్న పాకెట్ మనీ (Nanna Pocket Money)",
+            "అమ్మ పాకెట్ మనీ (Amma Pocket Money)",
+            "మరమ్మతులు (Repairs & Maintenance)",
+            "విరాళాలు (Donations / Charity)",
+            "శీతల పానీయాలు (Cool Drinks / Beverages)",
+            "చికెన్ / మటన్ / చేపలు (Chicken/Mutton/Fish)",
+            "గుడ్లు (Eggs)",
+            "ఇన్సూరెన్స్ / ఎల్‌ఐసి (Insurance Premium)",
+            "డ్రై ఫ్రూట్స్ (Dry Fruits & Nuts)",
+            "శుభకార్యాలు / బహుమతులు (Gifts & Functions)",
+            "ఇతరాలు",
         ]
 
     category = st.selectbox("Category *", categories, key=f"cat_{trans_type}")
@@ -231,7 +244,7 @@ with col2:
     )
 
     payment_modes = [
-        "Enchukondi...",
+        "ఎంచుకోండి...",
         "GOOGLE PAY",
         "PHONE PE",
         "CASH",
@@ -242,8 +255,8 @@ with col2:
     payment_mode = st.selectbox("Payment Mode *", payment_modes)
 
     description = st.text_input(
-        "Description (Evariki/Dheniki chellincharu?) *",
-        placeholder="Udaharana: Ramayya gariki kirana samanlaki",
+        "Description (ఎవరికి/దేనికి చెల్లించారు?) *",
+        placeholder="ఉదాహరణ: రామయ్య గారికి కిరాణా సామాన్లకు",
     )
 
 st.markdown("")
@@ -254,16 +267,16 @@ if st.button("💾 SAVE TRANSACTION"):
 
     if amount <= 0:
         validation_passed = False
-        error_message = "⚠️ Dayachesi saraina amount (Amount > 0) enter cheyandi!"
-    elif payment_mode == "Enchukondi...":
+        error_message = "⚠️ దయచేసి సరైన అమౌంట్ (Amount > 0) ఎంటర్ చేయండి!"
+    elif payment_mode == "ఎంచుకోండి...":
         validation_passed = False
-        error_message = "⚠️ Dayachesi 'Payment Mode' ni sarigga enchukondi!"
-    elif category == "Enchukondi...":
+        error_message = "⚠️ దయచేసి 'Payment Mode' ని సరిగ్గా ఎంచుకోండి!"
+    elif category == "ఎంచుకోండి...":
         validation_passed = False
-        error_message = "⚠️ Dayachesi 'Category' ni sarigga enchukondi!"
+        error_message = "⚠️ దయచేసి 'Category' ని సరిగ్గా ఎంచుకోండి!"
     elif not description.strip():
         validation_passed = False
-        error_message = "⚠️ Description rayadam marchipoyaru! Dayachesi vivaralu nimpandi."
+        error_message = "⚠️ డిస్క్రిప్షన్ రాయడం మర్చిపోయారు! దయచేసి వివరాలు నింపండి."
 
     if not validation_passed:
         st.error(error_message)
@@ -275,6 +288,8 @@ if st.button("💾 SAVE TRANSACTION"):
             "S NO": next_sno,
             "Date": formatted_date,
             "Month": formatted_month,
+            "Family / Member": family_choice,
+            "House": house_choice,
             "Transaction Type": trans_type,
             "Category": category,
             "Description": description.strip(),
@@ -289,17 +304,31 @@ if st.button("💾 SAVE TRANSACTION"):
         st.rerun()
 
 st.markdown("---")
-st.subheader("📊 Kharchula Nivedika (Expenses Summary)")
+st.subheader("📊 ఖర్చుల నివేదిక (Expenses Summary)")
 
 if not df.empty:
     available_months = sorted(df["Month"].unique().tolist(), reverse=True)
-    selected_month_filter = st.selectbox(
-        "Nivedika kosam nelani ennukondi (Select Month)", available_months
-    )
+    
+    # ఫిల్టర్ ఆప్షన్స్ (కుటుంబం మరియు నెల వారీగా)
+    fcol1, fcol2, fcol3 = st.columns(3)
+    with fcol1:
+        selected_month_filter = st.selectbox(
+            "నివేదిక కోసం నెలని ఎంచుకోండి (Select Month)", available_months
+        )
+    with fcol2:
+        family_filter_options = ["అందరివి (All)", "మా కుటుంబం (My Family)", "వేరే కుటుంబం / ఇతర వ్యక్తి (Other Family)"]
+        selected_family_filter = st.selectbox("కుటుంబం వారీగా ఫిల్టర్ చేయండి", family_filter_options)
+    with fcol3:
+        house_filter_options = ["అన్ని ఇళ్లు (All Houses)", "House 1", "House 2", "Common / General"]
+        selected_house_filter = st.selectbox("ఇల్లు వారీగా ఫిల్టర్ చేయండి", house_filter_options)
 
     month_filtered_df = df[df["Month"] == selected_month_filter]
+    if selected_family_filter != "అందరివి (All)":
+        month_filtered_df = month_filtered_df[month_filtered_df["Family / Member"] == selected_family_filter]
+    if selected_house_filter != "అన్ని ఇళ్లు (All Houses)":
+        month_filtered_df = month_filtered_df[month_filtered_df["House"] == selected_house_filter]
 
-    st.write(f"📅 Nela: **{selected_month_filter}** Vivaralu")
+    st.write(f"📅 నెల: **{selected_month_filter}** | కుటుంబం: **{selected_family_filter}** | ఇల్లు: **{selected_house_filter}** వివరాలు")
     st.dataframe(month_filtered_df, use_container_width=True)
 
     # Excel Download
@@ -311,14 +340,14 @@ if not df.empty:
     excel_data = excel_buffer.getvalue()
 
     st.download_button(
-        label="📥 Ee nela nivedikanu Excel lo download chesukondi (Download as Excel)",
+        label="📥 ఈ నెల నివేదికను ఎక్సెల్ లో డౌన్‌లోడ్ చేసుకోండి (Download as Excel)",
         data=excel_data,
-        file_name=f"keerthi_expenses_{selected_month_filter}.xlsx",
+        file_name=f"keerthi_expenses_report.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True,
     )
 
-    # Month-wise metrics display matching top format exactly
+    # ఫిల్టర్ చేసిన డేటా ఆధారంగా సమ్మరీ కార్డ్స్
     m_income = month_filtered_df[month_filtered_df["Transaction Type"] == "INCOME"]["Amount"].sum()
     m_total_expense = month_filtered_df[month_filtered_df["Transaction Type"] == "EXPENSE"]["Amount"].sum()
     
@@ -331,24 +360,24 @@ if not df.empty:
     m_bank_balance = m_income - m_bank_expenses
 
     scol1, scol2, scol3, scol4 = st.columns(4)
-    scol1.metric(f"💰 {selected_month_filter} Adayam", f"₹ {m_income:,.2f}")
+    scol1.metric(f"💰 ఆదాయం", f"₹ {m_income:,.2f}")
     scol2.metric(
-        f"💸 {selected_month_filter} Kharchu", 
+        f"💸 ఖర్చు", 
         f"₹ {m_total_expense:,.2f}",
         delta=f"Bank: ₹{m_bank_expenses:,.2f} | CC: ₹{m_cc_expenses:,.2f}",
         delta_color="off"
     )
-    scol3.metric(f"🏦 {selected_month_filter} Bank Balance", f"₹ {m_bank_balance:,.2f}")
-    scol4.metric(f"💳 {selected_month_filter} CC Kharchu", f"₹ {m_cc_expenses:,.2f}")
+    scol3.metric(f"🏦 బ్యాంకు బ్యాలెన్స్", f"₹ {m_bank_balance:,.2f}")
+    scol4.metric(f"💳 CC ఖర్చు", f"₹ {m_cc_expenses:,.2f}")
 
     # Item / Category wise analysis section
     st.markdown("---")
-    st.subheader("📈 Item / Category variga nelavari visleshana")
+    st.subheader("📈 ఐటమ్ / కేటగిరీ వారీగా నెలవారీ విశ్లేషణ")
 
     rep_col1, rep_col2 = st.columns(2)
     with rep_col1:
         report_type = st.radio(
-            "Rakam enchukondi (Transaction Type)",
+            "రకం ఎంచుకోండి (Transaction Type)",
             ["EXPENSE", "INCOME"],
             horizontal=True,
             key="item_rep_type",
@@ -360,33 +389,35 @@ if not df.empty:
         all_categories = sorted(sub_df["Category"].unique().tolist())
         with rep_col2:
             selected_cat = st.selectbox(
-                "Item / Category ni enchukondi", all_categories, key="item_cat_select"
+                "ఐటమ్ / కేటగిరీని ఎంచుకోండి", all_categories, key="item_cat_select"
             )
 
         cat_filtered_df = sub_df[sub_df["Category"] == selected_cat]
 
         if not cat_filtered_df.empty:
-            st.write(f"👉 **{selected_cat}** ({report_type}) - Nelavari automatic summary:")
+            st.write(f"👉 **{selected_cat}** ({report_type}) - నెలవారీ ఆటోమేటిక్ సమ్మరీ:")
 
             monthly_summary = (
                 cat_filtered_df.groupby("Month")["Amount"].sum().reset_index()
             )
-            monthly_summary.columns = ["Month (Nela)", "Total Amount (₹)"]
+            monthly_summary.columns = ["Month (నెల)", "Total Amount (₹)"]
 
             m_sum_col, m_det_col = st.columns([1, 2])
             with m_sum_col:
                 st.dataframe(monthly_summary, use_container_width=True)
                 cat_total = cat_filtered_df["Amount"].sum()
-                st.info(f"📌 **{selected_cat}** motham: **₹ {cat_total:,.2f}**")
+                st.info(f"📌 **{selected_cat}** మొత్తం: **₹ {cat_total:,.2f}**")
 
             with m_det_col:
-                st.write("📋 **Anni vivaralu (Detailed Entries):**")
+                st.write("📋 **అన్ని వివరాలు (Detailed Entries):**")
                 st.dataframe(
                     cat_filtered_df[
                         [
                             "S NO",
                             "Date",
                             "Month",
+                            "Family / Member",
+                            "House",
                             "Description",
                             "Amount",
                             "Payment Mode",
@@ -395,19 +426,19 @@ if not df.empty:
                     use_container_width=True,
                 )
         else:
-            st.info("Ee item-ku sambandhinchina entries evi levu.")
+            st.info("ఈ ఐటమ్‌కు సంబంధించిన ఎంట్రీలు ఏవీ లేవు.")
     else:
-        st.info("Ee vibhagamlo inka entries namodhu cheyaledu.")
+        st.info("ఈ విభాగంలో ఇంకా ఎంట్రీలు నమోదు చేయలేదు.")
 
     st.markdown("---")
-    st.subheader("❌ Thappuga padina entryni tholaginchandi (Delete Entry)")
+    st.subheader("❌ తప్పుగా పడిన ఎంట్రీని తొలగించండి (Delete Entry)")
     del_col1, del_col2 = st.columns([2, 1])
     with del_col1:
         sno_list = [None] + df["S NO"].tolist()
         sno_to_delete = st.selectbox(
-            "Tholaginchavalasina S NO ni enchukondi",
+            "తొలగించవలసిన S NO ని ఎంచుకోండి",
             sno_list,
-            format_func=lambda x: "Dayachesi S NO enchukondi..." if x is None else f"S NO: {x}",
+            format_func=lambda x: "దయచేసి S NO ఎంచుకోండి..." if x is None else f"S NO: {x}",
         )
     with del_col2:
         st.markdown("<br>", unsafe_allow_html=True)
@@ -417,15 +448,15 @@ if not df.empty:
                 if not df.empty:
                     df["S NO"] = range(1, len(df) + 1)
                 df.to_csv(DATA_FILE, index=False)
-                st.success("🗑️ Entry vijayavantamga tholaginchabadindi!")
+                st.success("🗑️ ఎంట్రీ విజయవంతంగా తొలగించబడింది!")
                 st.rerun()
             else:
-                st.warning("⚠️ Dayachesi tholaginchanduku oka S NO ni enchukondi!")
+                st.warning("⚠️ దయచేసి తొలగించడానికి ఒక S NO ని ఎంచుకోండి!")
 else:
-    st.info("ℹ️ Inthavaraku entuvali entries levu. Kothha transaction jodinchi aarambinchandi!")
+    st.info("ℹ️ ఇంతవరకు ఎటువంటి ఎంట్రీలు లేవు. కొత్త ట్రాన్సాక్షన్ జోడించి ప్రారంభించండి!")
 
 # Footer Heading
 st.markdown(
-    '<div class="footer-text">🙏 Dhanyavadhamulu (ధన్యవాదములు) 🙏</div>',
+    '<div class="footer-text">🙏 ధన్యవాదములు (Dhanyavadhamulu) 🙏</div>',
     unsafe_allow_html=True,
 )
