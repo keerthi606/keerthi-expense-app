@@ -123,7 +123,7 @@ if "show_success" in st.session_state and st.session_state["show_success"]:
     st.toast("🎉 ట్రాన్సాక్షన్ సేవ్ అయింది!")
     st.session_state["show_success"] = False
 
-# మీ కోరిక మేరకు 4 ముఖ్యమైన మెట్రిక్స్ లెక్కించడం
+# మెట్రిక్స్ లెక్కించడం
 if not df.empty:
     total_income = df[df["Transaction Type"] == "INCOME"]["Amount"].sum()
     total_expense = df[df["Transaction Type"] == "EXPENSE"]["Amount"].sum()
@@ -134,15 +134,23 @@ if not df.empty:
         & (df["Payment Mode"] == "CREDIT CARD")
     ]["Amount"].sum()
     
-    # బ్యాంకు/క్యాష్ ద్వారా చేసిన ఖర్చులు (మొత్తం ఖర్చులో నుండి CC ఖర్చులు పోను)
-    non_cc_expenses = total_expense - cc_expenses
+    # బ్యాంకు/క్యాష్ ద్వారా చేసిన ఖర్చులు
+    bank_expenses = total_expense - cc_expenses
     
-    # బ్యాంకు బ్యాలెన్స్ (మొత్తం ఆదాయం నుండి బ్యాంకు/క్యాష్ ఖర్చులు మైనస్ చేయగా వచ్చేది)
-    bank_balance = total_income - non_cc_expenses
+    # బ్యాంకు బ్యాలెన్స్ (మొత్తం ఆదాయం - బ్యాంకు ఖర్చులు)
+    bank_balance = total_income - bank_expenses
 
     mcol1, mcol2, mcol3, mcol4 = st.columns(4)
     mcol1.metric("💰 మొత్తం ఆదాయం", f"₹ {total_income:,.2f}")
-    mcol2.metric("💸 మొత్తం ఖర్చు", f"₹ {total_expense:,.2f}")
+    
+    # మొత్తం ఖర్చు కింద బ్రాకెట్లలో బ్యాంకు మరియు క్రెడిట్ కార్డ్ వివరాలు చూపించడం
+    mcol2.metric(
+        "💸 మొత్తం ఖర్చు", 
+        f"₹ {total_expense:,.2f}",
+        delta=f"బ్యాంక్: ₹{bank_expenses:,.2f} | CC: ₹{cc_expenses:,.2f}",
+        delta_color="off"
+    )
+    
     mcol3.metric("🏦 బ్యాంకు బ్యాలెన్స్", f"₹ {bank_balance:,.2f}")
     mcol4.metric("💳 క్రెడిట్ కార్డ్ ఖర్చు", f"₹ {cc_expenses:,.2f}")
     st.markdown("---")
