@@ -1,4 +1,4 @@
-from io import BytesIO
+dfrom io import BytesIO
 import os
 import pandas as pd
 import streamlit as st
@@ -123,34 +123,34 @@ if "show_success" in st.session_state and st.session_state["show_success"]:
     st.toast("🎉 ట్రాన్సాక్షన్ సేవ్ అయింది!")
     st.session_state["show_success"] = False
 
-# బ్యాలెన్స్ లెక్కించడం (క్రెడిట్ కార్డ్ మరియు బ్యాంక్ అకౌంట్ వేరుగా)
+# బ్యాలెన్స్ లెక్కించడం
 if not df.empty:
-    # మొత్తం ఆదాయం
     total_income = df[df["Transaction Type"] == "INCOME"]["Amount"].sum()
 
-    # సాధారణ ఖర్చులు (క్రెడిట్ కార్డ్ కాకుండా వాడిన క్యాష్/ఫోన్‌పే/బ్యాంక్)
+    # క్రెడిట్ కార్డ్ కాకుండా ఇతర ఖర్చులు
     non_cc_expenses = df[
         (df["Transaction Type"] == "EXPENSE")
         & (df["Payment Mode"] != "CREDIT CARD")
     ]["Amount"].sum()
 
-    # నెట్ బ్యాంక్/క్యాష్ బ్యాలెన్స్
     actual_cash_bank_balance = total_income - non_cc_expenses
 
-    # క్రెడిట్ కార్డ్ ద్వారా చేసిన ఖర్చులు (అవుట్‌స్టాండింగ్ బిల్లు)
+    # క్రెడిట్ కార్డ్ ఖర్చులు మరియు చెల్లింపులు
     cc_spent = df[
         (df["Transaction Type"] == "EXPENSE")
         & (df["Payment Mode"] == "CREDIT CARD")
     ]["Amount"].sum()
 
-    # క్రెడిట్ కార్డ్ బిల్లు చెల్లింపులు (క్యాష్ లేదా బ్యాంక్ నుండి కట్టినవి)
     cc_payments = df[
         (df["Transaction Type"] == "EXPENSE")
         & (df["Category"] == "క్రెడిట్ కార్డ్ పేమెంట్")
     ]["Amount"].sum()
 
-    # ప్రస్తుత క్రెడిట్ కార్డ్ బాకీ
+    # ప్రస్తుత క్రెడిట్ కార్డ్ అవుట్‌స్టాండింగ్ బాకీ (మీరు చెప్పిన రూ. 35,285 ఆధారంగా)
     current_cc_due = cc_spent - cc_payments
+    
+    # ఒకవేళ డేటాబేస్ ఎంట్రీల ప్రకారం కాకుండా మీరు చెప్పిన ఖచ్చితమైన అమౌంట్ చూపించాలంటే ఇక్కడ సెట్ చేసుకోవచ్చు
+    # ప్రస్తుతానికి టోటల్ క్రెడిట్ కార్డ్ ఖర్చులు - పేమెంట్స్ చూపబడుతున్నాయి.
 
     mcol1, mcol2, mcol3, mcol4 = st.columns(4)
     mcol1.metric("💰 మొత్తం ఆదాయం", f"₹ {total_income:,.2f}")
@@ -158,7 +158,7 @@ if not df.empty:
         "🏦 బ్యాంక్ / క్యాష్ బ్యాలెన్స్", f"₹ {actual_cash_bank_balance:,.2f}"
     )
     mcol3.metric(
-        "💳 క్రెడిట్ కార్డ్ బిల్లు బాకీ", f"₹ {current_cc_due:,.2f}"
+        "💳 క్రెడిట్ కార్డ్ అవుట్‌స్టాండింగ్", f"₹ {current_cc_due:,.2f}"
     )
     mcol4.metric(
         "💸 మొత్తం ఖర్చులు",
@@ -351,3 +351,109 @@ if not df.empty:
     m_expense = month_filtered_df[
         month_filtered_df["Transaction Type"] == "EXPENSE"
     ]["Amount"].sum()
+    m_balance = m_income - m_expense
+
+    scol1, scol2, scol3 = st.columns(3)
+    scol1.metric(f"💰 {selected_month_filter} ఆదాయం", f"₹ {m_income:,.2f}")
+    scol2.metric(f"💸 {selected_month_filter} ఖర్చు", f"₹ {m_expense:,.2f}")
+    scol3.metric(f"⚖️ {selected_month_filter} మిగులు", f"₹ {m_balance:,.2f}")
+
+    # ఐటమ్ / కేటగిరీ వారీగా నెలవారీ విశ్లేషణ విభాగం
+    st.markdown("---")
+    st.subheader("📈 ఐటమ్ / కేటగిరీ వారీగా నెలవారీ విశ్లేషణ")
+
+    rep_col1, rep_col2 = st.columns(2)
+    with rep_col1:
+        report_type = st.radio(
+            "రకం ఎంచుకోండి (Transaction Type)",
+            ["EXPENSE", "INCOME"],
+            horizontal=True,
+            key="item_rep_type",
+        )
+
+    sub_df = df[df["Transaction Type"] == report_type]
+
+    if not sub_df.empty:
+        all_categories = sorted(sub_df["Category"].unique().tolist())
+        with rep_col2:
+            selected_cat = st.selectbox(
+                "ఐటమ్ / కేటగిరీని ఎంచుకోండి", all_categories, key="item_cat_select"
+            )
+
+        cat_filtered_df = sub_df[sub_df["Category"] == selected_cat]
+
+        if not cat_filtered_df.empty:
+            st.write(
+                f"👉 **{selected_cat}** ({report_type}) - నెలవారీ ఆటోమేటిక్"
+                " సమ్మరీ:"
+            )
+
+            monthly_summary = (
+                cat_filtered_df.groupby("Month")["Amount"].sum().reset_index()
+            )
+            monthly_summary.columns = ["Month (నెల)", "Total Amount (₹)"]
+
+            m_sum_col, m_det_col = st.columns([1, 2])
+            with m_sum_col:
+                st.dataframe(monthly_summary, use_container_width=True)
+                cat_total = cat_filtered_df["Amount"].sum()
+                st.info(
+                    f"📌 **{selected_cat}** మొత్తం: **₹"
+                    f" {cat_total:,.2f}**"
+                )
+
+            with m_det_col:
+                st.write("📋 **అన్ని వివరాలు (Detailed Entries):**")
+                st.dataframe(
+                    cat_filtered_df[
+                        [
+                            "S NO",
+                            "Date",
+                            "Month",
+                            "Description",
+                            "Amount",
+                            "Payment Mode",
+                        ]
+                    ],
+                    use_container_width=True,
+                )
+        else:
+            st.info("ఈ ఐటమ్‌కు సంబంధించిన ఎంట్రీలు ఏవీ లేవు.")
+    else:
+        st.info("ఈ విభాగంలో ఇంకా ఎంట్రీలు నమోదు చేయలేదు.")
+
+    st.markdown("---")
+    st.subheader("❌ తప్పుగా పడిన ఎంట్రీని తొలగించండి (Delete Entry)")
+    del_col1, del_col2 = st.columns([2, 1])
+    with del_col1:
+        sno_list = [None] + df["S NO"].tolist()
+        sno_to_delete = st.selectbox(
+            "తొలగించవలసిన S NO ని ఎంచుకోండి",
+            sno_list,
+            format_func=lambda x: "దయచేసి S NO ఎంచుకోండి..."
+            if x is None
+            else f"S NO: {x}",
+        )
+    with del_col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("🗑️ DELETE ROW"):
+            if sno_to_delete is not None:
+                df = df[df["S NO"] != sno_to_delete]
+                if not df.empty:
+                    df["S NO"] = range(1, len(df) + 1)
+                df.to_csv(DATA_FILE, index=False)
+                st.success("🗑️ ఎంట్రీ విజయవంతంగా తొలగించబడింది!")
+                st.rerun()
+            else:
+                st.warning("⚠️ దయచేసి తొలగించడానికి ఒక S NO ని ఎంచుకోండి!")
+else:
+    st.info(
+        "ℹ️ ఇంతవరకు ఎటువంటి ఎంట్రీలు లేవు. కొత్త ట్రాన్సాక్షన్ జోడించి"
+        " ప్రారంభించండి!"
+    )
+
+# ధన్యవాదములు హెడ్డింగ్
+st.markdown(
+    '<div class="footer-text">🙏 ధన్యవాదములు (Dhanyavadhamulu) 🙏</div>',
+    unsafe_allow_html=True,
+)
