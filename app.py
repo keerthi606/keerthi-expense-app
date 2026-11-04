@@ -274,3 +274,166 @@ if st.button("💾 SAVE TRANSACTION"):
     if not validation_passed:
         st.error(error_message)
     else:
+        formatted_date = date.strftime("%d-%m-%Y")
+        formatted_month = date.strftime("%B %Y")
+
+        new_row = {
+            "S NO": next_sno,
+            "Date": formatted_date,
+            "Month": formatted_month,
+            "Transaction Type": trans_type,
+            "Category": category,
+            "Description": description.strip(),
+            "Amount": amount,
+            "Payment Mode": payment_mode,
+        }
+        df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+        df.to_csv(DATA_FILE, index=False)
+
+        st.session_state["show_success"] = True
+        st.balloons()
+        st.rerun()
+
+st.markdown("---")
+st.subheader("📊 ఖర్చుల నివేదిక (Expenses Summary)")
+
+if not df.empty:
+    available_months = sorted(df["Month"].unique().tolist(), reverse=True)
+    selected_month_filter = st.selectbox(
+        "నివేదిక కోసం నెలని ఎంచుకోండి (Select Month)", available_months
+    )
+
+    month_filtered_df = df[df["Month"] == selected_month_filter]
+
+    st.write(f"📅 నెల: **{selected_month_filter}** వివరాలు")
+    st.dataframe(month_filtered_df, use_container_width=True)
+
+    # Excel Download
+    excel_buffer = BytesIO()
+    with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+        month_filtered_df.to_excel(
+            writer, sheet_name=f"Expenses", index=False
+        )
+    excel_data = excel_buffer.getvalue()
+
+    st.download_button(
+        label=(
+            "📥 ఈ నెల నివేదికను ఎక్సెల్ లో డౌన్‌లోడ్ చేసుకోండి (Download as Excel)"
+        ),
+        data=excel_data,
+        file_name=f"keerthi_expenses_{selected_month_filter}.xlsx",
+        mime=(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        ),
+        use_container_width=True,
+    )
+
+    m_income = month_filtered_df[month_filtered_df["Transaction Type"] == "INCOME"][
+        "Amount"
+    ].sum()
+    m_expense = month_filtered_df[
+        month_filtered_df["Transaction Type"] == "EXPENSE"
+    ]["Amount"].sum()
+    m_balance = m_income - m_expense
+
+    scol1, scol2, scol3 = st.columns(3)
+    scol1.metric(f"💰 {selected_month_filter} ఆదాయం", f"₹ {m_income:,.2f}")
+    scol2.metric(f"💸 {selected_month_filter} ఖర్చు", f"₹ {m_expense:,.2f}")
+    scol3.metric(f"⚖️ {selected_month_filter} మిగులు", f"₹ {m_balance:,.2f}")
+
+    # ఐటమ్ / కేటగిరీ వారీగా నెలవారీ విశ్లేషణ విభాగం
+    st.markdown("---")
+    st.subheader("📈 ఐటమ్ / కేటగిరీ వారీగా నెలవారీ విశ్లేషణ")
+
+    rep_col1, rep_col2 = st.columns(2)
+    with rep_col1:
+        report_type = st.radio(
+            "రకం ఎంచుకోండి (Transaction Type)",
+            ["EXPENSE", "INCOME"],
+            horizontal=True,
+            key="item_rep_type",
+        )
+
+    sub_df = df[df["Transaction Type"] == report_type]
+
+    if not sub_df.empty:
+        all_categories = sorted(sub_df["Category"].unique().tolist())
+        with rep_col2:
+            selected_cat = st.selectbox(
+                "ఐటమ్ / కేటగిరీని ఎంచుకోండి", all_categories, key="item_cat_select"
+            )
+
+        cat_filtered_df = sub_df[sub_df["Category"] == selected_cat]
+
+        if not cat_filtered_df.empty:
+            st.write(
+                f"👉 **{selected_cat}** ({report_type}) - నెలవారీ ఆటోమేటిక్ సమ్మరీ:"
+            )
+
+            monthly_summary = (
+                cat_filtered_df.groupby("Month")["Amount"].sum().reset_index()
+            )
+            monthly_summary.columns = ["Month (నెల)", "Total Amount (₹)"]
+
+            m_sum_col, m_det_col = st.columns([1, 2])
+            with m_sum_col:
+                st.dataframe(monthly_summary, use_container_width=True)
+                cat_total = cat_filtered_df["Amount"].sum()
+                st.info(
+                    f"📌 **{selected_cat}** మొత్తం: **₹ {cat_total:,.2f}**"
+                )
+
+            with m_det_col:
+                st.write("📋 **అన్ని వివరాలు (Detailed Entries):**")
+                st.dataframe(
+                    cat_filtered_df[
+                        [
+                            "S NO",
+                            "Date",
+                            "Month",
+                            "Description",
+                            "Amount",
+                            "Payment Mode",
+                        ]
+                    ],
+                    use_container_width=True,
+                )
+        else:
+            st.info("ఈ ఐటమ్‌కు సంబంధించిన ఎంట్రీలు ఏవీ లేవు.")
+    else:
+        st.info("ఈ విభాగంలో ఇంకా ఎంట్రీలు నమోదు చేయలేదు.")
+
+    st.markdown("---")
+    st.subheader("❌ తప్పుగా పడిన ఎంట్రీని తొలగించండి (Delete Entry)")
+    del_col1, del_col2 = st.columns([2, 1])
+    with del_col1:
+        sno_list = [None] + df["S NO"].tolist()
+        sno_to_delete = st.selectbox(
+            "తొలగించవలసిన S NO ని ఎంచుకోండి",
+            sno_list,
+            format_func=lambda x: "దయచేసి S NO ఎంచుకోండి..."
+            if x is None
+            else f"S NO: {x}",
+        )
+    with del_col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("🗑️ DELETE ROW"):
+            if sno_to_delete is not None:
+                df = df[df["S NO"] != sno_to_delete]
+                if not df.empty:
+                    df["S NO"] = range(1, len(df) + 1)
+                df.to_csv(DATA_FILE, index=False)
+                st.success("🗑️ ఎంట్రీ విజయవంతంగా తొలగించబడింది!")
+                st.rerun()
+            else:
+                st.warning("⚠️ దయచేసి తొలగించడానికి ఒక S NO ని ఎంచుకోండి!")
+else:
+    st.info(
+        "ℹ️ ఇంతవరకు ఎటువంటి ఎంట్రీలు లేవు. కొత్త ట్రాన్సాక్షన్ జోడించి ప్రారంభించండి!"
+    )
+
+# Footer Heading
+st.markdown(
+    '<div class="footer-text">🙏 ధన్యవాదములు (Dhanyavadhamulu) 🙏</div>',
+    unsafe_allow_html=True,
+)
