@@ -68,16 +68,20 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Google Sheets Connection using gspread (open_by_url for best stability)
+# Google Sheets Connection using gspread with secure private key formatting
 scope = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive",
 ]
 
 try:
-    creds = Credentials.from_service_account_info(
-        dict(st.secrets["connections"]["gsheets"]), scopes=scope
-    )
+    gsheets_secrets = dict(st.secrets["connections"]["gsheets"])
+    if "private_key" in gsheets_secrets:
+        gsheets_secrets["private_key"] = gsheets_secrets["private_key"].replace(
+            "\\n", "\n"
+        )
+
+    creds = Credentials.from_service_account_info(gsheets_secrets, scopes=scope)
     client = gspread.authorize(creds)
     sheet_url = "https://docs.google.com/spreadsheets/d/1P_EY8UX8Iviz3TLv8Ige1SDXEJCn0TkRsX_gSqz0v4/edit"
     sheet = client.open_by_url(sheet_url).sheet1
