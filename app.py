@@ -1,7 +1,8 @@
 from io import BytesIO
 import pandas as pd
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
+import gspread
+from google.oauth2.service_account import Credentials
 # Page Configuration
 st.set_page_config(
     page_title="Keerthi Monthly Expense Tracker",
