@@ -2,7 +2,6 @@ from io import BytesIO
 import pandas as pd
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
-
 # Page Configuration
 st.set_page_config(
     page_title="Keerthi Monthly Expense Tracker",
