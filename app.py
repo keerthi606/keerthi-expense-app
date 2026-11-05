@@ -1,6 +1,8 @@
 from io import BytesIO
 import pandas as pd
 import streamlit as st
+import gspread
+from google.oauth2.service_account import Credentials
 
 # Page Configuration
 st.set_page_config(
@@ -81,17 +83,29 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Google Sheets Connection using Streamlit Native Connection
+# Google Sheets Connection using gspread
+scope = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive",
+]
+
 try:
-    conn = st.connection("gsheets", type="gsheets")
-    df = conn.read(worksheet="Sheet1", ttl=0)
+    creds = Credentials.from_service_account_info(
+        dict(st.secrets["connections"]["gsheets"]), scopes=scope
+    )
+    client = gspread.authorize(creds)
+    sheet = client.open_by_key(
+        "1P_EY8UX8Iviz3TLv8Ige1SDXEJCn0TkRsX_gSqz0v4"
+    ).sheet1
 except Exception as e:
     st.error(f"Google Sheets Connection Error: {e}")
     st.stop()
 
-# Data cleaning & formatting
+# Load and clean data
 try:
-    if df is not None and not df.empty:
+    records = sheet.get_all_records()
+    df = pd.DataFrame(records)
+    if not df.empty:
         df = df.dropna(how="all")
         if "Date" in df.columns:
             parsed_dates = pd.to_datetime(
@@ -348,8 +362,11 @@ if st.button("💾 SAVE TRANSACTION"):
         updated_df = updated_df.fillna("")
 
         try:
-            # Using st.connection to update the sheet safely
-            conn.update(worksheet="Sheet1", data=updated_df)
+            sheet.clear()
+            sheet.update(
+                [updated_df.columns.values.tolist()]
+                + updated_df.values.tolist()
+            )
             st.session_state["show_success"] = True
             st.balloons()
             st.rerun()
