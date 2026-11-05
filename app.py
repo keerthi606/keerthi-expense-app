@@ -82,11 +82,22 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Google Sheets Connection
-conn = st.connection("gsheets", type=GSheetsConnection)
+# Google Sheets Connection using gspread
+scope = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive",
+]
+creds = Credentials.from_service_account_info(
+    dict(st.secrets["connections"]["gsheets"]), scopes=scope
+)
+client = gspread.authorize(creds)
+sheet = client.open_by_key(
+    "1P_EY8UX8Iviz3TLv8Ige1SDXEJCn0TkRsX_gSqz0v4"
+).worksheet("Sheet1")
 
 try:
-    df = conn.read(worksheet="Sheet1", ttl=5)
+  records = sheet.get_all_records()
+  df = pd.DataFrame(records)
     df = df.dropna(how="all")
     if not df.empty and "Date" in df.columns:
         parsed_dates = pd.to_datetime(
@@ -295,7 +306,10 @@ if st.button("💾 SAVE TRANSACTION"):
         }
         
         updated_df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-        conn.update(worksheet="Sheet1", data=updated_df)
+       sheet.clear()
+sheet.update(
+    [updated_df.columns.values.tolist()] + updated_df.values.tolist()
+)
 
         st.session_state["show_success"] = True
         st.balloons()
