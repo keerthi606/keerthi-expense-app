@@ -68,7 +68,24 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 1. Swagatham
+# Google Sheets Connection using gspread (open_by_url for best stability)
+scope = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive",
+]
+
+try:
+    creds = Credentials.from_service_account_info(
+        dict(st.secrets["connections"]["gsheets"]), scopes=scope
+    )
+    client = gspread.authorize(creds)
+    sheet_url = "https://docs.google.com/spreadsheets/d/1P_EY8UX8Iviz3TLv8Ige1SDXEJCn0TkRsX_gSqz0v4/edit"
+    sheet = client.open_by_url(sheet_url).sheet1
+except Exception as e:
+    st.error(f"Google Sheets Connection Error: {e}")
+    st.stop()
+
+# 1. Swagatham UI
 st.markdown(
     '<div class="welcome-text">🙏 Swagatham (స్వాగతం) 🙏</div>',
     unsafe_allow_html=True,
@@ -82,24 +99,6 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
-
-# Google Sheets Connection using gspread
-scope = [
-    "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive",
-]
-
-try:
-    creds = Credentials.from_service_account_info(
-        dict(st.secrets["connections"]["gsheets"]), scopes=scope
-    )
-    client = gspread.authorize(creds)
-    sheet = client.open_by_key(
-        "1P_EY8UX8Iviz3TLv8Ige1SDXEJCn0TkRsX_gSqz0v4"
-    ).sheet1
-except Exception as e:
-    st.error(f"Google Sheets Connection Error: {e}")
-    st.stop()
 
 # Load and clean data
 try:
@@ -346,27 +345,20 @@ if st.button("💾 SAVE TRANSACTION"):
         formatted_date = date.strftime("%d-%m-%Y")
         formatted_month = date.strftime("%B %Y")
 
-        new_row = {
-            "S NO": next_sno,
-            "Date": formatted_date,
-            "Month": formatted_month,
-            "House": selected_house,
-            "Transaction Type": trans_type,
-            "Category": category,
-            "Description": description.strip(),
-            "Amount": amount,
-            "Payment Mode": payment_mode,
-        }
-
-        updated_df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-        updated_df = updated_df.fillna("")
+        new_row = [
+            next_sno,
+            formatted_date,
+            formatted_month,
+            selected_house,
+            trans_type,
+            category,
+            description.strip(),
+            amount,
+            payment_mode,
+        ]
 
         try:
-            sheet.clear()
-            sheet.update(
-                [updated_df.columns.values.tolist()]
-                + updated_df.values.tolist()
-            )
+            sheet.append_row(new_row)
             st.session_state["show_success"] = True
             st.balloons()
             st.rerun()
