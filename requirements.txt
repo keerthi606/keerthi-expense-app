@@ -1,6 +1,5 @@
 streamlit
 pandas
 openpyxl
-st-gsheets-connection
-google-auth
 gspread
+google-auth
