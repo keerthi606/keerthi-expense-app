@@ -1,7 +1,7 @@
 from io import BytesIO
-import os
 import pandas as pd
 import streamlit as st
+from streamlit_gsheets import GSheetsConnection
 
 # Page Configuration
 st.set_page_config(
@@ -62,21 +62,12 @@ st.markdown(
         color: #1f3c88;
         font-weight: 700;
     }
-    .footer-text {
-        text-align: center;
-        color: #4A154B;
-        font-size: 30px;
-        font-weight: 800;
-        margin-top: 50px;
-        padding: 20px;
-        border-top: 3px dashed #654ea3;
-    }
     </style>
 """,
     unsafe_allow_html=True,
 )
 
-# 1. Swagatham mariyu Heading modatiga chupinchadam
+# 1. Swagatham
 st.markdown(
     '<div class="welcome-text">🙏 Swagatham (స్వాగతం) 🙏</div>',
     unsafe_allow_html=True,
@@ -91,11 +82,12 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-DATA_FILE = "expenses_data.csv"
+# Google Sheets Connection
+conn = st.connection("gsheets", type=GSheetsConnection)
 
-# Data load cheyyadam mariyu dates/months set cheyyadam
 try:
-    df = pd.read_csv(DATA_FILE)
+    df = conn.read(worksheet="Sheet1", ttl=5)
+    df = df.dropna(how="all")
     if not df.empty and "Date" in df.columns:
         parsed_dates = pd.to_datetime(
             df["Date"], format="mixed", dayfirst=True, errors="coerce"
@@ -105,7 +97,7 @@ try:
         df = df.dropna(subset=["Date"])
         if "House" not in df.columns:
             df["House"] = "House 1 (Ma Kutumbham)"
-except FileNotFoundError:
+except Exception as e:
     df = pd.DataFrame(
         columns=[
             "S NO",
@@ -120,7 +112,7 @@ except FileNotFoundError:
         ]
     )
 
-# Save success message chupinchadam
+# Save success message
 if "show_success" in st.session_state and st.session_state["show_success"]:
     st.success("✅ Save Successfully! Transaction vijayavantamga save aindi.")
     st.toast("🎉 Transaction save aindi!")
@@ -128,7 +120,7 @@ if "show_success" in st.session_state and st.session_state["show_success"]:
 
 st.markdown("---")
 
-# 2. Heading taruvatha House selection pettadam
+# 2. House Selection
 st.subheader("🏠 Illu / Property Enchuko (Select House)")
 selected_house = st.selectbox(
     "Deyantho pani undho aa illu/property ni enchukondi *", 
@@ -137,21 +129,21 @@ selected_house = st.selectbox(
 
 st.markdown("---")
 
-# Data ni select chesina house ki filter cheyyadam
+# Filter data for selected house
 if not df.empty:
     house_df = df[df["House"] == selected_house]
 else:
     house_df = pd.DataFrame(columns=df.columns)
 
-# 3. Select chesina house ki matrame Total Income, Total Expense, Balance chupinchadam
+# Metrics Display
 if not house_df.empty:
-    h_income = house_df[house_df["Transaction Type"] == "INCOME"]["Amount"].sum()
-    h_expense = house_df[house_df["Transaction Type"] == "EXPENSE"]["Amount"].sum()
+    h_income = house_df[house_df["Transaction Type"] == "INCOME"]["Amount"].astype(float).sum()
+    h_expense = house_df[house_df["Transaction Type"] == "EXPENSE"]["Amount"].astype(float).sum()
     
     h_cc_expenses = house_df[
         (house_df["Transaction Type"] == "EXPENSE")
         & (house_df["Payment Mode"] == "CREDIT CARD")
-    ]["Amount"].sum()
+    ]["Amount"].astype(float).sum()
     
     h_bank_expenses = h_expense - h_cc_expenses
     h_bank_balance = h_income - h_bank_expenses
@@ -172,7 +164,7 @@ else:
 
 st.markdown("---")
 
-# 4. Kothha Transaction Jodinchu Option (Select chesina house ke automatic ga apply avuthundi)
+# 4. Add New Transaction
 st.subheader(f"📝 {selected_house} koraku Kothha Transaction Jodinchandi")
 
 col1, col2 = st.columns(2)
@@ -183,17 +175,13 @@ with col1:
         if (not df.empty and "S NO" in df.columns and not df["S NO"].isnull().all())
         else 1
     )
-    st.number_input(
-        "S NO * (Automatic)", value=next_sno, disabled=True, key="auto_sno"
-    )
+    st.number_input("S NO * (Automatic)", value=next_sno, disabled=True, key="auto_sno")
 
     date = st.date_input("Date *")
     formatted_date_preview = date.strftime("%d-%m-%Y")
     st.caption(f"📅 Enchukunna thedi roopam: **{formatted_date_preview}**")
 
-    trans_type = st.radio(
-        "Transaction Type *", ["INCOME", "EXPENSE"], horizontal=True
-    )
+    trans_type = st.radio("Transaction Type *", ["INCOME", "EXPENSE"], horizontal=True)
 
     if trans_type == "INCOME":
         categories = [
@@ -251,9 +239,7 @@ with col1:
     category = st.selectbox("Category *", categories, key=f"cat_{trans_type}")
 
 with col2:
-    amount = st.number_input(
-        "AMOUNT (₹) *", min_value=0.0, step=1.0, format="%.2f"
-    )
+    amount = st.number_input("AMOUNT (₹) *", min_value=0.0, step=1.0, format="%.2f")
 
     payment_modes = [
         "Enchukondi...",
@@ -307,8 +293,9 @@ if st.button("💾 SAVE TRANSACTION"):
             "Amount": amount,
             "Payment Mode": payment_mode,
         }
-        df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-        df.to_csv(DATA_FILE, index=False)
+        
+        updated_df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+        conn.update(worksheet="Sheet1", data=updated_df)
 
         st.session_state["show_success"] = True
         st.balloons()
@@ -332,7 +319,7 @@ if not house_df.empty:
     excel_buffer = BytesIO()
     with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
         month_filtered_df.to_excel(
-            writer, sheet_name=f"Expenses", index=False
+            writer, sheet_name="Expenses", index=False
         )
     excel_data = excel_buffer.getvalue()
 
@@ -343,60 +330,3 @@ if not house_df.empty:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True,
     )
-
-    # Month-wise summary cards for selected house
-    m_income = month_filtered_df[month_filtered_df["Transaction Type"] == "INCOME"]["Amount"].sum()
-    m_total_expense = month_filtered_df[month_filtered_df["Transaction Type"] == "EXPENSE"]["Amount"].sum()
-    
-    m_cc_expenses = month_filtered_df[
-        (month_filtered_df["Transaction Type"] == "EXPENSE")
-        & (month_filtered_df["Payment Mode"] == "CREDIT CARD")
-    ]["Amount"].sum()
-    
-    m_bank_expenses = m_total_expense - m_cc_expenses
-    m_bank_balance = m_income - m_bank_expenses
-
-    scol1, scol2, scol3, scol4 = st.columns(4)
-    scol1.metric(f"💰 {selected_month_filter} Adayam", f"₹ {m_income:,.2f}")
-    scol2.metric(
-        f"💸 {selected_month_filter} Kharchu", 
-        f"₹ {m_total_expense:,.2f}",
-        delta=f"Bank: ₹{m_bank_expenses:,.2f} | CC: ₹{m_cc_expenses:,.2f}",
-        delta_color="off"
-    )
-    scol3.metric(f"🏦 {selected_month_filter} Bank Balance", f"₹ {m_bank_balance:,.2f}")
-    scol4.metric(f"💳 {selected_month_filter} CC Kharchu", f"₹ {m_cc_expenses:,.2f}")
-
-    # Item / Category wise analysis section
-    st.markdown("---")
-    st.subheader("📈 Item / Category variga nelavari visleshana")
-
-    rep_col1, rep_col2 = st.columns(2)
-    with rep_col1:
-        report_type = st.radio(
-            "Rakam enchukondi (Transaction Type)",
-            ["EXPENSE", "INCOME"],
-            horizontal=True,
-            key="item_rep_type",
-        )
-
-    sub_df = house_df[house_df["Transaction Type"] == report_type]
-
-    if not sub_df.empty:
-        all_categories = sorted(sub_df["Category"].unique().tolist())
-        with rep_col2:
-            selected_cat = st.selectbox(
-                "Item / Category ni enchukondi", all_categories, key="item_cat_select"
-            )
-
-        cat_filtered_df = sub_df[sub_df["Category"] == selected_cat]
-
-        if not cat_filtered_df.empty:
-            st.write(f"👉 **{selected_cat}** ({report_type}) - Nelavari automatic summary:")
-
-            monthly_summary = (
-                cat_filtered_df.groupby("Month")["Amount"].sum().reset_index()
-            )
-            monthly_summary.columns = ["Month (Nela)", "Total Amount (₹)"]
-
-            m_sum_col, m_det_col = st.columns([1, 2])
